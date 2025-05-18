@@ -1,0 +1,23 @@
+models:
+  vision:
+    yolo:
+      model_path: "models/vision/yolo/yolov8n.pt"
+      confidence: 0.5
+    clip:
+      model_path: "models/vision/clip/ViT-B-32.pt"
+  
+  speech:
+    whisper:
+      model_path: "models/speech/whisper/base.pt"
+      language: "zh"
+    tts:
+      model_path: "models/speech/tts/fast_speech2"
+      speaker_id: 0
+  
+  nlp:
+    llm:
+      model_path: "models/nlp/llm/chatglm3-6b"
+      device: "cuda"
+      max_length: 2048
+    embeddings:
+      model_path: "models/nlp/embeddings/text2vec-base-chinese" 

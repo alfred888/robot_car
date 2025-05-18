@@ -1,0 +1,22 @@
+# 基础依赖
+fastapi==0.104.1
+uvicorn==0.24.0
+websockets==12.0
+pyyaml==6.0.1
+python-dotenv==1.0.0
+loguru==0.7.2
+
+# 视觉相关
+torch==2.1.1
+torchvision==0.16.1
+ultralytics==8.0.196  # YOLOv8
+transformers==4.35.2  # CLIP
+
+# 语音相关
+openai-whisper==20231117
+TTS==0.21.1
+
+# NLP相关
+sentence-transformers==2.2.2
+accelerate==0.24.1
+bitsandbytes==0.41.1 

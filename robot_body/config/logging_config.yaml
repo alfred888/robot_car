@@ -1,0 +1,70 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  standard:
+    format: '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  detailed:
+    format: '%(asctime)s [%(levelname)s] %(name)s [%(filename)s:%(lineno)d] - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: standard
+    stream: ext://sys.stdout
+
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/body.log
+    maxBytes: 5242880  # 5MB
+    backupCount: 3
+    encoding: utf8
+
+  error_file:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: detailed
+    filename: logs/body_error.log
+    maxBytes: 5242880  # 5MB
+    backupCount: 2
+    encoding: utf8
+
+loggers:
+  body:
+    level: DEBUG
+    handlers: [console, file, error_file]
+    propagate: false
+
+  hardware:
+    level: DEBUG
+    handlers: [console, file, error_file]
+    propagate: false
+
+  camera:
+    level: DEBUG
+    handlers: [console, file, error_file]
+    propagate: false
+
+  audio:
+    level: DEBUG
+    handlers: [console, file, error_file]
+    propagate: false
+
+  motors:
+    level: DEBUG
+    handlers: [console, file, error_file]
+    propagate: false
+
+  websocket:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+
+root:
+  level: INFO
+  handlers: [console, file] 

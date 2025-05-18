@@ -1,0 +1,19 @@
+server:
+  host: "192.168.0.69"
+  port: 8080
+  debug: true
+
+gpu:
+  device: "cuda"
+  memory_limit: 8192  # MB
+
+logging:
+  level: "INFO"
+  path: "logs/brain.log"
+  max_size: 100  # MB
+  backup_count: 5
+
+websocket:
+  ping_interval: 30  # seconds
+  ping_timeout: 10   # seconds
+  max_message_size: 10485760  # 10MB 

@@ -1,0 +1,16 @@
+{
+    "description": "Cursor rules for Python development with design document compliance",
+    "version": "1.0",
+    "rules": [
+        "Always read and follow robot_tech_design.md before coding",
+        "Follow Python best practices and PEP 8",
+        "Use type hints and docstrings",
+        "Write clean, maintainable code",
+        "Test your code thoroughly",
+        "Keep security in mind",
+        "Document your changes",
+        "Review your code before committing"
+    ],
+    "design_doc_path": "robot_tech_design.md",
+    "python_expert_mode": true
+}

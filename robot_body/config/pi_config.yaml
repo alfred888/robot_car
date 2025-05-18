@@ -1,0 +1,28 @@
+raspberry_pi:
+  host: "192.168.0.9"
+  port: 8081
+  debug: true
+
+hardware:
+  camera:
+    resolution: [640, 480]
+    fps: 30
+  motors:
+    left_pin: 17
+    right_pin: 18
+    pwm_frequency: 1000
+  audio:
+    input_device: "default"
+    output_device: "default"
+    sample_rate: 16000
+
+websocket:
+  server_url: "ws://192.168.0.69:8080"
+  reconnect_interval: 5  # seconds
+  ping_interval: 30      # seconds
+
+logging:
+  level: "INFO"
+  path: "logs/body.log"
+  max_size: 50  # MB
+  backup_count: 3 
