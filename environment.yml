@@ -1,0 +1,42 @@
+name: robot_dev
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+  - raspberrypi
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    # 开发工具
+    - black==23.12.1
+    - isort==5.13.2
+    - mypy==1.8.0
+    - flake8==7.0.0
+    - pytest==7.4.4
+    - pytest-asyncio==0.23.3
+    - pytest-cov==4.1.0
+    - pre-commit==3.6.0
+    - sphinx==7.2.6
+    - sphinx-rtd-theme==2.0.0
+    - mkdocs==1.5.3
+    - mkdocs-material==9.5.3
+    # 版本控制
+    - gitpython==3.1.41
+    # 文档工具
+    - pdoc==14.3.0
+    # 代码质量
+    - safety==2.3.5
+    - bandit==1.7.7
+    - pylint==3.0.3
+    # 性能分析
+    - memory-profiler==0.61.0
+    - line-profiler==4.1.1
+    # 测试工具
+    - coverage==7.4.1
+    - pytest-benchmark==4.0.0
+    # 开发工具
+    - ipython==8.21.0
+    - jupyter==1.0.0
+    - notebook==7.0.6
+    - ipykernel==6.28.0 

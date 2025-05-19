@@ -236,6 +236,164 @@ robot_car/
 └── docker-compose.yml        # Docker配置
 ```
 
+### 2.6 环境管理规范
+
+#### 2.6.1 Conda 环境配置
+- **环境命名规范**
+  - 大脑模块：`robot_brain`
+  - 身体模块：`robot_body`
+  - 开发环境：`robot_dev`
+
+- **环境文件位置**
+  ```
+  robot_car/
+  ├── big_brain/
+  │   └── environment.yml    # 大脑模块环境配置
+  ├── robot_body/
+  │   └── environment.yml    # 身体模块环境配置
+  └── environment.yml        # 开发环境配置
+  ```
+
+- **环境文件格式**
+  ```yaml
+  name: robot_brain
+  channels:
+    - conda-forge
+    - pytorch
+    - nvidia
+  dependencies:
+    - python=3.10
+    - pip
+    - pip:
+      - fastapi==0.109.0
+      - uvicorn==0.27.0
+      - pydantic==2.5.3
+      - websockets==12.0
+      - numpy==1.26.3
+      - torch==2.1.2
+      - torchvision==0.16.2
+      - opencv-python==4.9.0.80
+      - python-multipart==0.0.6
+      - python-jose==3.3.0
+      - passlib==1.7.4
+      - bcrypt==4.1.2
+      - python-dotenv==1.0.0
+      - pyyaml==6.0.1
+      - pytest==7.4.4
+      - pytest-asyncio==0.23.3
+      - pytest-cov==4.1.0
+      - black==23.12.1
+      - isort==5.13.2
+      - mypy==1.8.0
+      - flake8==7.0.0
+  ```
+
+#### 2.6.2 环境管理流程
+1. **环境创建**
+   ```bash
+   # 创建大脑模块环境
+   conda env create -f big_brain/environment.yml
+   
+   # 创建身体模块环境
+   conda env create -f robot_body/environment.yml
+   
+   # 创建开发环境
+   conda env create -f environment.yml
+   ```
+
+2. **环境激活**
+   ```bash
+   # 激活大脑模块环境
+   conda activate robot_brain
+   
+   # 激活身体模块环境
+   conda activate robot_body
+   
+   # 激活开发环境
+   conda activate robot_dev
+   ```
+
+3. **环境更新**
+   ```bash
+   # 更新环境
+   conda env update -f environment.yml
+   
+   # 导出环境
+   conda env export > environment.yml
+   ```
+
+4. **环境清理**
+   ```bash
+   # 删除环境
+   conda env remove -n robot_brain
+   
+   # 清理缓存
+   conda clean -a
+   ```
+
+#### 2.6.3 依赖管理规范
+1. **版本控制**
+   - 所有依赖必须指定具体版本
+   - 使用 `==` 固定版本号
+   - 定期更新依赖版本
+
+2. **依赖分类**
+   - 核心依赖：项目必需的包
+   - 开发依赖：测试、代码质量工具
+   - 可选依赖：可选功能模块
+
+3. **依赖更新流程**
+   - 在开发环境中测试新版本
+   - 更新环境文件
+   - 提交版本更新
+   - 更新文档
+
+#### 2.6.4 环境变量管理
+1. **环境变量文件**
+   ```
+   robot_car/
+   ├── big_brain/
+   │   └── .env.example    # 大脑模块环境变量示例
+   ├── robot_body/
+   │   └── .env.example    # 身体模块环境变量示例
+   └── .env.example        # 开发环境变量示例
+   ```
+
+2. **环境变量规范**
+   - 使用 `.env` 文件管理环境变量
+   - 提供 `.env.example` 作为模板
+   - 敏感信息使用环境变量
+   - 不同环境使用不同配置
+
+3. **环境变量使用**
+   ```python
+   from dotenv import load_dotenv
+   import os
+   
+   # 加载环境变量
+   load_dotenv()
+   
+   # 使用环境变量
+   API_KEY = os.getenv("API_KEY")
+   ```
+
+#### 2.6.5 开发工具配置
+1. **编辑器配置**
+   - VSCode 设置
+   - Python 插件
+   - 代码格式化工具
+
+2. **代码质量工具**
+   - Black：代码格式化
+   - isort：导入排序
+   - mypy：类型检查
+   - flake8：代码检查
+
+3. **Git 配置**
+   - 提交信息规范
+   - 分支管理策略
+   - 代码审查流程
+
 ## 3. 功能模块
 ### 3.1 运动控制
 ### 3.2 传感器数据处理
@@ -270,4 +428,8 @@ robot_car/
 ## 9. 风险评估
 ### 9.1 技术风险
 ### 9.2 项目风险
-### 9.3 应对策略 
+### 9.3 应对策略
+
+## 约束说明
+
+- **ugv_body 文件夹**：该文件夹包含机器人原有的代码，仅作为参考，禁止修改。任何新功能或修改应在其他模块中实现，以保持原有代码的完整性。 

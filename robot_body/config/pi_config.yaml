@@ -1,7 +1,10 @@
 raspberry_pi:
-  host: "192.168.0.9"
+  host: "192.168.0.25"
   port: 8081
   debug: true
+  username: "ws"
+
+
 
 hardware:
   camera:
