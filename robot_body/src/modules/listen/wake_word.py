@@ -32,29 +32,48 @@ class MicrophoneError(Exception):
     """麦克风错误异常类"""
     pass
 
+def list_input_devices():
+    """列出所有可用的输入设备"""
+    devices = sd.query_devices()
+    input_devices = []
+    
+    logger.info("可用的音频输入设备:")
+    for i, device in enumerate(devices):
+        if device['max_input_channels'] > 0:  # 只显示输入设备
+            logger.info(f"设备 {i}: {device['name']} (通道数: {device['max_input_channels']})")
+            input_devices.append(i)
+    
+    return input_devices
+
 class WakeWordListener:
     """唤醒词监听器类"""
     
-    def __init__(self, wake_word="你好小智", device_id=2):  # 默认使用 card 2 (USB Camera)
+    def __init__(self, wake_word="你好小智", device_id=None):  # 默认不指定设备
         self.wake_word = wake_word
         self.recognizer = sr.Recognizer()
         self.audio_queue = queue.Queue()
         self.is_listening = False
         self.sample_rate = 16000
-        self.device_id = device_id
+        
+        # 获取可用的输入设备
+        input_devices = list_input_devices()
+        
+        if not input_devices:
+            raise MicrophoneError("未找到可用的音频输入设备")
+        
+        # 如果没有指定设备ID，使用第一个可用的输入设备
+        if device_id is None:
+            self.device_id = input_devices[0]
+        else:
+            if device_id not in input_devices:
+                raise MicrophoneError(f"设备 {device_id} 不是有效的输入设备")
+            self.device_id = device_id
         
         # 获取设备信息
-        self.device_info = sd.query_devices(device_id, 'input')
+        self.device_info = sd.query_devices(self.device_id, 'input')
         self.channels = self.device_info['max_input_channels']
         
-        # 打印音频设备信息
-        logger.info("可用的音频设备:")
-        devices = sd.query_devices()
-        for i, device in enumerate(devices):
-            if device['max_input_channels'] > 0:  # 只显示输入设备
-                logger.info(f"设备 {i}: {device['name']} (通道数: {device['max_input_channels']})")
-        
-        logger.info(f"使用设备 {device_id}: {self.device_info['name']} (通道数: {self.channels})")
+        logger.info(f"使用设备 {self.device_id}: {self.device_info['name']} (通道数: {self.channels})")
         
     def audio_callback(self, indata, frames, time, status):
         """音频回调函数，将音频数据放入队列"""
@@ -130,11 +149,24 @@ class WakeWordListener:
             self.is_listening = False
             
 def main():
-    # 创建唤醒词监听器，使用 USB Camera 的麦克风 (device_id=2)
-    listener = WakeWordListener(device_id=2)
-    
-    # 开始监听
-    listener.start_listening()
+    try:
+        # 列出所有可用的输入设备
+        input_devices = list_input_devices()
+        
+        if not input_devices:
+            logger.error("未找到可用的音频输入设备")
+            return
+        
+        # 创建唤醒词监听器，使用第一个可用的输入设备
+        listener = WakeWordListener()
+        
+        # 开始监听
+        listener.start_listening()
+        
+    except MicrophoneError as e:
+        logger.error(f"麦克风错误: {str(e)}")
+    except Exception as e:
+        logger.error(f"发生错误: {str(e)}")
 
 if __name__ == "__main__":
     main() 
