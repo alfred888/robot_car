@@ -1,0 +1,18 @@
+{
+    "models": {
+        "fastvlm": {
+            "name": "FastVLM",
+            "description": "FastVLM视觉语言模型",
+            "websocket": {
+                "host": "localhost",
+                "port": 5000,
+                "path": "/ws"
+            },
+            "docker": {
+                "service_name": "fastvlm",
+                "container_name": "fastvlm"
+            }
+        }
+    },
+    "default_model": "fastvlm"
+} 

@@ -10,6 +10,43 @@ from PIL import Image
 import io
 import os
 
+def load_model_config(model_name):
+    """
+    加载模型配置
+    
+    Args:
+        model_name: 模型名称
+    
+    Returns:
+        dict: 模型配置
+    """
+    config_path = os.path.join(os.path.dirname(__file__), 'vision_models_config.json')
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            
+        if model_name not in config['models']:
+            print(f"错误: 未找到模型配置: {model_name}", file=sys.stderr)
+            sys.exit(1)
+            
+        return config['models'][model_name]
+    except Exception as e:
+        print(f"错误: 加载配置文件失败: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+def get_websocket_url(model_config):
+    """
+    获取WebSocket URL
+    
+    Args:
+        model_config: 模型配置
+    
+    Returns:
+        str: WebSocket URL
+    """
+    ws_config = model_config['websocket']
+    return f"ws://{ws_config['host']}:{ws_config['port']}{ws_config['path']}"
+
 async def see_image(image_path, model="fastvlm"):
     """
     发送图片到视觉服务并获取描述
@@ -22,12 +59,17 @@ async def see_image(image_path, model="fastvlm"):
         str: 图片描述
     """
     try:
+        # 加载模型配置
+        model_config = load_model_config(model)
+        
         # 读取图片
         with open(image_path, 'rb') as f:
             image_data = f.read()
         
+        # 获取WebSocket URL
+        uri = get_websocket_url(model_config)
+        
         # 连接WebSocket服务
-        uri = "ws://localhost:5000/ws"
         async with websockets.connect(uri) as websocket:
             # 发送图片数据
             await websocket.send(image_data)
@@ -44,7 +86,7 @@ async def see_image(image_path, model="fastvlm"):
 
 def main():
     if len(sys.argv) < 2:
-        print("用法: python see_client.py <图片路径> [模型名称]")
+        print("用法: python robot_eyes.py <图片路径> [模型名称]")
         sys.exit(1)
     
     image_path = sys.argv[1]
