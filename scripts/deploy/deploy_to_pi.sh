@@ -16,14 +16,13 @@ fi
 
 # 使用yq读取yaml配置
 PI_HOST=$(yq eval '.raspberry_pi.host' "$PI_CONFIG_FILE")
-PI_USER=$(yq eval '.raspberry_pi.username' "$PI_CONFIG_FILE") 
+PI_USER=$(yq eval '.raspberry_pi.username' "$PI_CONFIG_FILE")
+PI_PORT=$(yq eval '.raspberry_pi.ssh_port' "$PI_CONFIG_FILE")
 
-
-PI_PORT=22  # SSH端口固定为22
 REMOTE_DIR="~/robot_body"
 LOCAL_DIR="robot_body"
 
-if [ -z "$PI_HOST" ] || [ -z "$PI_USER" ] || [ -z "$PI_PASS" ]; then
+if [ -z "$PI_HOST" ] || [ -z "$PI_USER" ] || [ -z "$PI_PORT" ]; then
     echo -e "${RED}错误: 配置文件中缺少必要的树莓派连接信息${NC}"
     exit 1
 fi
@@ -113,13 +112,8 @@ deploy_to_pi() {
     echo -e "\n${GREEN}设置文件权限...${NC}"
     ssh -p $PI_PORT $PI_USER@$PI_HOST "chmod -R 755 $REMOTE_DIR"
     
-    # 创建虚拟环境
-    echo -e "\n${GREEN}创建虚拟环境...${NC}"
-    ssh -p $PI_PORT $PI_USER@$PI_HOST "cd $REMOTE_DIR && python3 -m venv venv"
-    
-    # 安装依赖
-    echo -e "\n${GREEN}安装依赖...${NC}"
-    ssh -p $PI_PORT $PI_USER@$PI_HOST "cd $REMOTE_DIR && source venv/bin/activate && pip install -r requirements.txt"
+
+
 }
 
 # 主函数
@@ -132,6 +126,13 @@ main() {
     
     if ! command -v rsync &> /dev/null; then
         echo -e "${RED}错误: 未安装 rsync${NC}"
+        exit 1
+    fi
+    
+    # 检查 SSH 连接
+    echo -e "${YELLOW}检查 SSH 连接...${NC}"
+    if ! ssh -p $PI_PORT $PI_USER@$PI_HOST "echo 'SSH 连接成功'" &>/dev/null; then
+        echo -e "${RED}错误: 无法连接到树莓派，请检查 SSH 配置${NC}"
         exit 1
     fi
     
