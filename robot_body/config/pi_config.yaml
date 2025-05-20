@@ -1,8 +1,9 @@
 raspberry_pi:
   host: "192.168.0.25"
-  port: 8081
+  ssh_port: 22
   debug: true
   username: "ws"
+  venv_name: "venv"
 
 
 
