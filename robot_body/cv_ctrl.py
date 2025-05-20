@@ -10,15 +10,15 @@ import yaml, os, json, subprocess
 from collections import deque
 import textwrap
 
-# libraries for csi camera
+# 用于CSI摄像头的库
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder, Encoder
 from picamera2.outputs import FfmpegOutput
 
-# libraries for oak camera
+# 用于OAK摄像头的库
 import depthai as dai
 
-# config file.
+# 加载配置文件
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
 with open(thisPath + '/config.yaml', 'r') as yaml_file:
@@ -26,17 +26,21 @@ with open(thisPath + '/config.yaml', 'r') as yaml_file:
 
 
 class OpencvFuncs():
-    """docstring for OpencvFuncs"""
+    """OpenCV功能类,用于图像处理和计算机视觉功能"""
     def __init__(self, project_path, base_ctrl):
+        # 基础控制器和事件标志
         self.base_ctrl = base_ctrl
         self.cv_event = threading.Event()
         self.cv_event.clear()
         self.cv_mode = f['code']['cv_none']
         self.detection_reaction_mode = f['code']['re_none']
         
+        # 文件路径配置
         self.this_path = project_path
         self.photo_path = self.this_path + '/templates/pictures/'
         self.video_path = self.this_path + '/templates/videos/'
+        
+        # 图像和视频参数
         self.frame_scale = 1
         self.picture_capture_flag = False
         self.set_video_record_flag = False
@@ -46,7 +50,7 @@ class OpencvFuncs():
         self.scale_rate = 1
         self.video_quality = f['video']['default_quality']
 
-        # cv ctrl info
+        # CV控制参数
         self.cv_light_mode = 0
         self.pan_angle = 0
         self.tilt_angle = 0
@@ -60,19 +64,19 @@ class OpencvFuncs():
         self.CMD_GIMBAL = f['cmd_config']['cmd_gimbal_ctrl']
         self.sampling_rad = f['cv']['sampling_rad']
 
-        # reaction
+        # 反应时间记录
         self.last_frame_capture_time = datetime.datetime.now()
         self.last_movtion_captured = datetime.datetime.now()
 
-        # movtion detection
+        # 运动检测参数
         self.avg = None
 
-        # face detection & tracking
+        # 人脸检测和跟踪参数
         self.faceCascade = cv2.CascadeClassifier(thisPath + '/models/haarcascade_frontalface_default.xml')
         self.min_radius = f['cv']['min_radius']
         self.track_faces_iterate = f['cv']['track_faces_iterate']
 
-        # color detection
+        # 颜色检测参数
         self.points = deque(maxlen=32)
         self.color_list = {
                         'red':  [np.array([  0,200, 170]), np.array([ 10, 255, 255])],
@@ -87,24 +91,24 @@ class OpencvFuncs():
             self.color_upper = np.array(f['cv']['color_upper'])
         self.track_color_iterate = f['cv']['track_color_iterate']
 
-        # cv_dnn_objects
+        # DNN目标检测参数
         self.net = cv2.dnn.readNetFromCaffe(thisPath + '/models/deploy.prototxt', thisPath + '/models/mobilenet_iter_73000.caffemodel')
         self.class_names = ["background", "aeroplane", "bicycle", "bird", "boat",
                             "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
                             "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
                             "sofa", "train", "tvmonitor"]
 
-        # mediapipe
+        # MediaPipe初始化
         self.mpDraw = mp.solutions.drawing_utils
 
-        # mediapipe detect hand
+        # MediaPipe手势检测参数
         self.mpHands = mp.solutions.hands
         self.hands = self.mpHands.Hands(max_num_hands=1)
         self.max_distance = 1
         self.gs_pic_interval = 6
         self.gs_pic_last_time = time.time()
 
-        # findline autodrive
+        # 巡线自动驾驶参数
         self.sampling_line_1 = 0.6
         self.sampling_line_2 = 0.9
         self.slope_impact = 1.5
@@ -115,11 +119,11 @@ class OpencvFuncs():
         self.line_lower = np.array([25, 150, 70])
         self.line_upper = np.array([42, 255, 255])
 
-        # mediapipe detect faces
+        # MediaPipe人脸检测参数
         self.mp_face_detection = mp.solutions.face_detection
         self.face_detection = self.mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5)
 
-        # mediapipe detect pose
+        # MediaPipe姿态检测参数
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(static_image_mode=False, 
                                     model_complexity=1, 
@@ -127,11 +131,11 @@ class OpencvFuncs():
                                     min_detection_confidence=0.5, 
                                     min_tracking_confidence=0.5)
 
-        # base data
+        # 基础数据显示参数
         self.show_base_info_flag = False
         self.recv_deque = deque(maxlen=20)
 
-        # info update
+        # 信息更新参数
         self.show_info_flag = True
         self.info_update_time = time.time()
         self.info_deque = deque(maxlen=10)
@@ -140,24 +144,24 @@ class OpencvFuncs():
         self.info_show_time = 10
         self.recv_line_max = 26
 
-        # mission funcs
+        # 任务标志
         self.mission_flag = False
 
-        # osd settings
+        # OSD设置
         self.add_osd = f['base_config']['add_osd']
 
-        # camera type detection
+        # 摄像头类型检测
         self.usb_camera_connected = self.usb_camera_detection()
         self.csi_camera_connected = False
         self.oak_camera_connected = False
 
-        # usb camera init
+        # USB摄像头初始化
         if self.usb_camera_connected:
             self.camera = cv2.VideoCapture(0)
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, f['video']['default_res_w'])
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, f['video']['default_res_h'])
 
-        # csi camera init
+        # CSI摄像头初始化
         if not self.usb_camera_connected:
             print("init csi camera.")
             try:
@@ -169,7 +173,7 @@ class OpencvFuncs():
             except:
                 self.csi_camera_connected = False
 
-        #oak camera init 
+        # OAK摄像头初始化
         if not self.usb_camera_connected and not self.csi_camera_connected:
             try:
                 self.pipeline = dai.Pipeline()
@@ -194,6 +198,7 @@ class OpencvFuncs():
 
 
     def frame_process(self):
+        """处理摄像头帧,应用CV功能并返回处理后的帧"""
         try:
             if self.usb_camera_connected:
                 success, input_frame = self.camera.read()
@@ -225,7 +230,7 @@ class OpencvFuncs():
             input_frame = buffer.tobytes()
             return input_frame
 
-        # opencv funcs
+        # opencv功能处理
         if self.cv_mode != f['code']['cv_none']:
             if not self.cv_event.is_set():
                 self.cv_event.set()
@@ -257,10 +262,10 @@ class OpencvFuncs():
                         (round(0.05*640), round(0.1*640 + i * 13)), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.369, (255, 255, 255), 1)
 
-        # render osd
+        # 渲染OSD
         input_frame = self.osd_render(input_frame)
 
-        # capture frame
+        # 拍照
         if self.picture_capture_flag:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             photo_filename = f'{self.photo_path}photo_{current_time}.jpg'
@@ -271,7 +276,7 @@ class OpencvFuncs():
             except:
                 pass
 
-        # record video
+        # 录制视频
         if not self.set_video_record_flag and not self.video_record_status_flag:
             pass
         elif self.set_video_record_flag and not self.video_record_status_flag:
@@ -286,7 +291,7 @@ class OpencvFuncs():
             self.video_record_status_flag = False
             self.writer.close()
 
-        # frame scale
+        # 帧缩放
         if self.scale_rate == 1:
             pass
         else:
@@ -299,26 +304,27 @@ class OpencvFuncs():
             y_end   = int(img_height_d2 + (img_height_d2//self.scale_rate))
             input_frame = input_frame[y_start:y_end, x_start:x_end]
 
-        # encode frame
+        # 编码帧
         try:
             ret, buffer = cv2.imencode('.jpg', input_frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.video_quality])
             input_frame = buffer.tobytes()
         except:
             pass
 
-        # get fps
+        # 计算FPS
         self.fps_count += 1
         if time.time() - self.fps_start_time >= 2:
             self.video_fps = self.fps_count/2
             self.fps_count = 0
             self.fps_start_time = time.time()
 
-        # output frame
+        # 输出帧
         return input_frame
 
 
 
     def usb_camera_detection(self):
+        """检测USB摄像头是否连接"""
         lsusb_output = subprocess.check_output(["lsusb"]).decode("utf-8")
         if "Camera" in lsusb_output:
             print("USB Camera connected")
@@ -329,13 +335,14 @@ class OpencvFuncs():
 
 
     def osd_render(self, osd_frame):
+        """渲染OSD信息到帧上"""
         if not self.add_osd:
             return osd_frame
         
         # add your osd info here
         # cv2.putText(overlay_buffer, 'OSD_TEST', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-        # render lidar data
+        # 渲染激光雷达数据
         lidar_points = []
         for lidar_angle, lidar_distance in zip(self.base_ctrl.rl.lidar_angles_show, self.base_ctrl.rl.lidar_distances_show):
             lidar_x = int(lidar_distance * np.cos(lidar_angle) * 0.05) + 320
@@ -345,7 +352,7 @@ class OpencvFuncs():
         for lidar_point in lidar_points:
             cv2.circle(osd_frame, lidar_point, 3, (255, 0, 0), -1)
 
-        # render sensor data
+        # 渲染传感器数据
         sensor_index = 0
         for sensor_line in self.base_ctrl.rl.sensor_data:
             # sensor_line = sensor_line[:-2]
@@ -358,21 +365,25 @@ class OpencvFuncs():
         return osd_frame
 
     def picture_capture(self):
+        """触发拍照"""
         self.picture_capture_flag = True
 
     def video_record(self, input_cmd):
+        """控制视频录制"""
         if input_cmd:
             self.set_video_record_flag = True
         else:
             self.set_video_record_flag = False
 
     def scale_ctrl(self, input_rate):
+        """控制帧缩放比例"""
         if input_rate < 1:
             self.scale_rate = 1
         else:
             self.scale_rate = input_rate
 
     def set_video_quality(self, input_quality):
+        """设置视频质量"""
         if input_quality < 1:
             self.video_quality = 1
         elif input_quality > 100:
@@ -381,11 +392,13 @@ class OpencvFuncs():
             self.video_quality = int(input_quality)
 
     def set_cv_mode(self, input_mode):
+        """设置CV功能模式"""
         self.cv_mode = input_mode
         if self.cv_mode == f['code']['cv_none']:
             self.set_video_record_flag = False
 
     def set_detection_reaction(self, input_reaction):
+        """设置检测反应模式"""
         self.detection_reaction_mode = input_reaction
         if self.detection_reaction_mode == f['code']['re_none']:
             self.set_video_record_flag = False
@@ -393,6 +406,7 @@ class OpencvFuncs():
 
 
     def cv_detect_movition(self, img):
+        """运动检测功能"""
         timestamp = datetime.datetime.now()
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
@@ -441,6 +455,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def gimbal_track(self, fx, fy, gx, gy, iterate):
+        """云台跟踪控制"""
         global gimbal_x, gimbal_y
         distance = math.sqrt((fx - gx) ** 2 + (gy - fy) ** 2)
         self.pan_angle += (gx - fx) * iterate
@@ -463,6 +478,7 @@ class OpencvFuncs():
         return distance
 
     def cv_detect_faces(self, img):
+        """人脸检测功能"""
         gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = self.faceCascade.detectMultiScale(
                 gray_img,     
@@ -523,6 +539,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def cv_detect_objects(self, img):
+        """目标检测功能"""
         overlay_buffer = np.zeros_like(img)
         cv2.putText(overlay_buffer, 'CV_OBJS', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
