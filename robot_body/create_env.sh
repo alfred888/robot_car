@@ -69,6 +69,12 @@ else
     exit 1
 fi
 
+# 检查requirements.txt是否存在
+if [ ! -f "requirements.txt" ]; then
+    echo -e "${RED}错误: requirements.txt 文件不存在${NC}"
+    exit 1
+fi
+
 # 安装依赖
 echo -e "${YELLOW}安装依赖...${NC}"
 if [ "$IS_RASPBERRY_PI" = true ]; then
