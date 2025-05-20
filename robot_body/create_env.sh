@@ -1,112 +1,105 @@
 #!/bin/bash
 
-# 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# 检查是否为树莓派
+# 检查是否在树莓派环境
 if [ -f /proc/device-tree/model ]; then
-    IS_RASPBERRY_PI=true
-    echo -e "${YELLOW}检测到树莓派环境${NC}"
+    echo "检测到树莓派环境"
+    # 树莓派环境使用pip
+    PYTHON_CMD="python3"
+    PIP_CMD="pip3"
+    VENV_DIR="venv"
 else
-    IS_RASPBERRY_PI=false
-    echo -e "${YELLOW}非树莓派环境${NC}"
+    echo "检测到开发环境"
+    # 开发环境使用conda
+    PYTHON_CMD="python"
+    PIP_CMD="pip"
+    VENV_DIR="robot_env"
 fi
 
 # 检查Python版本
-echo -e "${YELLOW}检查Python版本...${NC}"
-if command -v python3 &>/dev/null; then
-    PYTHON_VERSION=$(python3 --version)
-    echo -e "${GREEN}找到Python: $PYTHON_VERSION${NC}"
+echo "检查Python版本..."
+if command -v $PYTHON_CMD &> /dev/null; then
+    $PYTHON_CMD --version
 else
-    echo -e "${RED}错误: 未找到Python3${NC}"
+    echo "错误: 未找到Python"
     exit 1
 fi
 
 # 检查pip版本
-echo -e "${YELLOW}检查pip版本...${NC}"
-if command -v pip3 &>/dev/null; then
-    PIP_VERSION=$(pip3 --version)
-    echo -e "${GREEN}找到pip: $PIP_VERSION${NC}"
+echo "检查pip版本..."
+if command -v $PIP_CMD &> /dev/null; then
+    $PIP_CMD --version
 else
-    echo -e "${RED}错误: 未找到pip3${NC}"
+    echo "错误: 未找到pip"
     exit 1
 fi
 
-# 创建虚拟环境
-echo -e "${YELLOW}创建Python虚拟环境...${NC}"
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}虚拟环境创建成功${NC}"
+# 创建Python虚拟环境
+echo "创建Python虚拟环境..."
+if [ -f /proc/device-tree/model ]; then
+    # 树莓派环境使用venv
+    if [ ! -d "$VENV_DIR" ]; then
+        $PYTHON_CMD -m venv $VENV_DIR
+        if [ $? -ne 0 ]; then
+            echo "错误: 虚拟环境创建失败"
+            exit 1
+        fi
     else
-        echo -e "${RED}错误: 虚拟环境创建失败${NC}"
-        exit 1
+        echo "虚拟环境已存在"
     fi
 else
-    echo -e "${YELLOW}虚拟环境已存在${NC}"
+    # 开发环境使用conda
+    if ! conda env list | grep -q "^$VENV_DIR "; then
+        conda create -y -n $VENV_DIR python=3.11
+        if [ $? -ne 0 ]; then
+            echo "错误: conda环境创建失败"
+            exit 1
+        fi
+    else
+        echo "conda环境已存在"
+    fi
 fi
 
 # 激活虚拟环境
-echo -e "${YELLOW}激活虚拟环境...${NC}"
-source venv/bin/activate
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}虚拟环境激活成功${NC}"
+echo "激活虚拟环境..."
+if [ -f /proc/device-tree/model ]; then
+    # 树莓派环境使用venv
+    source $VENV_DIR/bin/activate
+    if [ $? -ne 0 ]; then
+        echo "错误: 虚拟环境激活失败"
+        exit 1
+    fi
 else
-    echo -e "${RED}错误: 虚拟环境激活失败${NC}"
-    exit 1
+    # 开发环境使用conda
+    source $(conda info --base)/etc/profile.d/conda.sh
+    conda activate $VENV_DIR
+    if [ $? -ne 0 ]; then
+        echo "错误: conda环境激活失败"
+        exit 1
+    fi
 fi
+echo "虚拟环境激活成功"
 
 # 升级pip
-echo -e "${YELLOW}升级pip...${NC}"
-pip install --upgrade pip
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}pip升级成功${NC}"
-else
-    echo -e "${RED}错误: pip升级失败${NC}"
+echo "升级pip..."
+$PIP_CMD install --upgrade pip
+if [ $? -ne 0 ]; then
+    echo "错误: pip升级失败"
     exit 1
 fi
-
-# 检查requirements.txt是否存在
-if [ ! -f "requirements.txt" ]; then
-    echo -e "${RED}错误: requirements.txt 文件不存在${NC}"
-    exit 1
-fi
+echo "pip升级成功"
 
 # 安装依赖
-echo -e "${YELLOW}安装依赖...${NC}"
-if [ "$IS_RASPBERRY_PI" = true ]; then
-    # 树莓派特定依赖
-    pip install -r requirements.txt
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}依赖安装成功${NC}"
-    else
-        echo -e "${RED}错误: 依赖安装失败${NC}"
+echo "安装依赖..."
+if [ -f "requirements.txt" ]; then
+    $PIP_CMD install -r requirements.txt
+    if [ $? -ne 0 ]; then
+        echo "错误: 依赖安装失败"
         exit 1
     fi
+    echo "依赖安装成功"
 else
-    # 非树莓派环境
-    pip install -r requirements.txt
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}依赖安装成功${NC}"
-    else
-        echo -e "${RED}错误: 依赖安装失败${NC}"
-        exit 1
-    fi
-fi
-
-# 设置权限
-echo -e "${YELLOW}设置脚本执行权限...${NC}"
-chmod +x *.sh
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}权限设置成功${NC}"
-else
-    echo -e "${RED}错误: 权限设置失败${NC}"
+    echo "错误: requirements.txt文件不存在"
     exit 1
 fi
 
-echo -e "${GREEN}环境配置完成！${NC}"
-echo -e "${YELLOW}使用以下命令激活环境：${NC}"
-echo "source venv/bin/activate" 
+echo "环境配置完成" 
