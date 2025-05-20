@@ -41,15 +41,20 @@ class WakeWordListener:
         self.audio_queue = queue.Queue()
         self.is_listening = False
         self.sample_rate = 16000
-        self.channels = 1
         self.device_id = device_id
+        
+        # 获取设备信息
+        self.device_info = sd.query_devices(device_id, 'input')
+        self.channels = self.device_info['max_input_channels']
         
         # 打印音频设备信息
         logger.info("可用的音频设备:")
         devices = sd.query_devices()
         for i, device in enumerate(devices):
             if device['max_input_channels'] > 0:  # 只显示输入设备
-                logger.info(f"设备 {i}: {device['name']}")
+                logger.info(f"设备 {i}: {device['name']} (通道数: {device['max_input_channels']})")
+        
+        logger.info(f"使用设备 {device_id}: {self.device_info['name']} (通道数: {self.channels})")
         
     def audio_callback(self, indata, frames, time, status):
         """音频回调函数，将音频数据放入队列"""
@@ -63,6 +68,10 @@ class WakeWordListener:
             try:
                 # 从队列获取音频数据
                 audio_data = self.audio_queue.get()
+                
+                # 如果是多通道，转换为单通道
+                if self.channels > 1:
+                    audio_data = np.mean(audio_data, axis=1)
                 
                 # 将音频数据转换为AudioData对象
                 audio = sr.AudioData(
@@ -104,7 +113,8 @@ class WakeWordListener:
                 samplerate=self.sample_rate,
                 channels=self.channels,
                 callback=self.audio_callback,
-                device=self.device_id  # 指定麦克风设备
+                device=self.device_id,  # 指定麦克风设备
+                dtype=np.float32
             ):
                 logger.info(f"开始监听唤醒词: {self.wake_word}")
                 logger.info("按 Ctrl+C 停止监听")
@@ -114,6 +124,8 @@ class WakeWordListener:
                     
         except KeyboardInterrupt:
             logger.info("唤醒词监听器已停止")
+        except Exception as e:
+            logger.error(f"启动音频流时出错: {str(e)}")
         finally:
             self.is_listening = False
             
