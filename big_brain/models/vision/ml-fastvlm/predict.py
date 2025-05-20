@@ -2,6 +2,9 @@
 # Modified from LLaVA/predict.py
 # Please see ACKNOWLEDGEMENTS for details about LICENSE
 #
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import argparse
 
@@ -28,7 +31,7 @@ def predict(args):
     # Load model
     disable_torch_init()
     model_name = get_model_name_from_path(model_path)
-    tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, args.model_base, model_name, device="mps")
+    tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, args.model_base, model_name, device="cuda")
 
     # Construct prompt
     qs = args.prompt
@@ -45,7 +48,7 @@ def predict(args):
     model.generation_config.pad_token_id = tokenizer.pad_token_id
 
     # Tokenize prompt
-    input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(torch.device("mps"))
+    input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(torch.device("cuda"))
 
     # Load and preprocess image
     image = Image.open(args.image_file).convert('RGB')
@@ -55,7 +58,7 @@ def predict(args):
     with torch.inference_mode():
         output_ids = model.generate(
             input_ids,
-            images=image_tensor.unsqueeze(0).half(),
+            images=image_tensor.unsqueeze(0).half().to(torch.device("cuda")),
             image_sizes=[image.size],
             do_sample=True if args.temperature > 0 else False,
             temperature=args.temperature,
