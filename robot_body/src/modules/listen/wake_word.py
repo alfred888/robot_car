@@ -40,7 +40,7 @@ def list_input_devices():
     logger.info("可用的音频输入设备:")
     for i, device in enumerate(devices):
         if device['max_input_channels'] > 0:  # 只显示输入设备
-            logger.info(f"设备 {i}: {device['name']} (通道数: {device['max_input_channels']})")
+            logger.info(f"设备 {i}: {device['name']} (通道数: {device['max_input_channels']}, 采样率: {device['default_samplerate']}Hz)")
             input_devices.append(i)
     
     return input_devices
@@ -53,7 +53,6 @@ class WakeWordListener:
         self.recognizer = sr.Recognizer()
         self.audio_queue = queue.Queue()
         self.is_listening = False
-        self.sample_rate = 16000
         
         # 获取可用的输入设备
         input_devices = list_input_devices()
@@ -72,8 +71,9 @@ class WakeWordListener:
         # 获取设备信息
         self.device_info = sd.query_devices(self.device_id, 'input')
         self.channels = self.device_info['max_input_channels']
+        self.sample_rate = int(self.device_info['default_samplerate'])
         
-        logger.info(f"使用设备 {self.device_id}: {self.device_info['name']} (通道数: {self.channels})")
+        logger.info(f"使用设备 {self.device_id}: {self.device_info['name']} (通道数: {self.channels}, 采样率: {self.sample_rate}Hz)")
         
     def audio_callback(self, indata, frames, time, status):
         """音频回调函数，将音频数据放入队列"""
