@@ -18,6 +18,8 @@ import speech_recognition as sr
 from gtts import gTTS
 import tempfile
 import pygame
+import sounddevice as sd
+import numpy as np
 
 # 配置日志
 logging.basicConfig(
@@ -33,243 +35,94 @@ class MicrophoneError(Exception):
 class WakeWordListener:
     """唤醒词监听器类"""
     
-    def __init__(self, 
-                 wake_word: str = "乐迪乐迪",
-                 response: str = "我在",
-                 language: str = "zh-CN",
-                 energy_threshold: int = 300,
-                 pause_threshold: float = 0.8):
-        """
-        初始化唤醒词监听器
-        
-        Args:
-            wake_word: 唤醒词
-            response: 唤醒后的响应语
-            language: 语音识别语言
-            energy_threshold: 语音能量阈值
-            pause_threshold: 语音停顿阈值
-        """
+    def __init__(self, wake_word="你好小智", device_id=2):  # 默认使用 card 2 (USB Camera)
         self.wake_word = wake_word
-        self.response = response
-        self.language = language
-        self.energy_threshold = energy_threshold
-        self.pause_threshold = pause_threshold
-        
-        # 检查麦克风
-        self._check_microphone()
-        
         self.recognizer = sr.Recognizer()
-        self.recognizer.energy_threshold = energy_threshold
-        self.recognizer.pause_threshold = pause_threshold
-        
-        self.is_listening = False
         self.audio_queue = queue.Queue()
-        self.callback: Optional[Callable] = None
+        self.is_listening = False
+        self.sample_rate = 16000
+        self.channels = 1
+        self.device_id = device_id
         
-        # 初始化pygame用于播放音频
-        pygame.mixer.init()
-    
-    def _check_microphone(self) -> None:
-        """
-        检查麦克风是否正常工作
+        # 打印音频设备信息
+        logger.info("可用的音频设备:")
+        devices = sd.query_devices()
+        for i, device in enumerate(devices):
+            if device['max_input_channels'] > 0:  # 只显示输入设备
+                logger.info(f"设备 {i}: {device['name']}")
         
-        Raises:
-            MicrophoneError: 当麦克风不可用或工作不正常时抛出
-        """
-        try:
-            # 检查系统是否识别到麦克风设备
-            result = subprocess.run(['arecord', '-l'], 
-                                 capture_output=True, 
-                                 text=True)
-            if 'card' not in result.stdout:
-                raise MicrophoneError("未检测到麦克风设备")
-            
-            # 测试麦克风录音
-            test_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-            test_file.close()
-            
-            try:
-                # 尝试录制1秒的音频
-                subprocess.run(['arecord', '-d', '1', '-f', 'cd', test_file.name],
-                             capture_output=True,
-                             check=True)
-                
-                # 检查录音文件大小
-                if os.path.getsize(test_file.name) == 0:
-                    raise MicrophoneError("麦克风录音测试失败")
-                
-                logger.info("麦克风检测正常")
-            finally:
-                # 清理测试文件
-                os.unlink(test_file.name)
-                
-        except subprocess.CalledProcessError as e:
-            raise MicrophoneError(f"麦克风测试失败: {str(e)}")
-        except Exception as e:
-            raise MicrophoneError(f"麦克风检查出错: {str(e)}")
-    
-    def _get_available_microphones(self) -> List[str]:
-        """
-        获取可用的麦克风设备列表
+    def audio_callback(self, indata, frames, time, status):
+        """音频回调函数，将音频数据放入队列"""
+        if status:
+            logger.warning(f"音频状态: {status}")
+        self.audio_queue.put(indata.copy())
         
-        Returns:
-            List[str]: 可用麦克风设备列表
-        """
-        try:
-            result = subprocess.run(['arecord', '-l'], 
-                                 capture_output=True, 
-                                 text=True)
-            devices = []
-            for line in result.stdout.split('\n'):
-                if 'card' in line:
-                    devices.append(line.strip())
-            return devices
-        except Exception as e:
-            logger.error(f"获取麦克风设备列表失败: {str(e)}")
-            return []
-        
-    def _play_response(self):
-        """播放响应语音"""
-        try:
-            # 使用gTTS生成语音文件
-            tts = gTTS(text=self.response, lang=self.language)
-            
-            # 创建临时文件
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as fp:
-                temp_filename = fp.name
-            
-            # 保存语音文件
-            tts.save(temp_filename)
-            
-            # 播放语音
-            pygame.mixer.music.load(temp_filename)
-            pygame.mixer.music.play()
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(10)
-            
-            # 删除临时文件
-            os.unlink(temp_filename)
-            
-        except Exception as e:
-            logger.error(f"播放响应语音时出错: {str(e)}")
-    
-    def _listen_loop(self):
-        """监听循环"""
-        try:
-            with sr.Microphone() as source:
-                logger.info("正在调整环境噪声...")
-                self.recognizer.adjust_for_ambient_noise(source)
-                logger.info("开始监听唤醒词...")
-                
-                while self.is_listening:
-                    try:
-                        audio = self.recognizer.listen(source)
-                        self.audio_queue.put(audio)
-                    except Exception as e:
-                        logger.error(f"监听时出错: {str(e)}")
-                        # 如果出现错误，等待一段时间后重试
-                        time.sleep(1)
-                        continue
-        except Exception as e:
-            logger.error(f"麦克风初始化失败: {str(e)}")
-            self.is_listening = False
-    
-    def _process_audio(self):
+    def process_audio(self):
         """处理音频数据"""
         while self.is_listening:
             try:
-                audio = self.audio_queue.get(timeout=1)
+                # 从队列获取音频数据
+                audio_data = self.audio_queue.get()
+                
+                # 将音频数据转换为AudioData对象
+                audio = sr.AudioData(
+                    audio_data.tobytes(),
+                    self.sample_rate,
+                    audio_data.dtype.itemsize
+                )
+                
+                # 使用Google语音识别
                 try:
-                    text = self.recognizer.recognize_google(
-                        audio, 
-                        language=self.language
-                    )
-                    logger.info(f"识别到: {text}")
+                    text = self.recognizer.recognize_google(audio, language='zh-CN')
+                    logger.info(f"识别到的文字: {text}")
                     
+                    # 检查是否包含唤醒词
                     if self.wake_word in text:
-                        logger.info("检测到唤醒词!")
-                        self._play_response()
-                        if self.callback:
-                            self.callback()
-                            
+                        logger.info(f"检测到唤醒词: {self.wake_word}")
+                        # 这里可以添加唤醒后的操作
+                        
                 except sr.UnknownValueError:
-                    pass
+                    pass  # 无法识别语音
                 except sr.RequestError as e:
-                    logger.error(f"无法从Google Speech Recognition服务获取结果: {str(e)}")
+                    logger.error(f"无法连接到Google语音识别服务: {e}")
                     
             except queue.Empty:
                 continue
-            except Exception as e:
-                logger.error(f"处理音频时出错: {str(e)}")
-                continue
-    
-    def start(self, callback: Optional[Callable] = None):
-        """
-        启动监听
-        
-        Args:
-            callback: 检测到唤醒词后的回调函数
-        """
-        if self.is_listening:
-            logger.warning("监听器已经在运行")
-            return
-            
+                
+    def start_listening(self):
+        """开始监听"""
         self.is_listening = True
-        self.callback = callback
         
-        # 启动监听线程
-        self.listen_thread = threading.Thread(target=self._listen_loop)
-        self.listen_thread.daemon = True
-        self.listen_thread.start()
+        # 启动音频处理线程
+        process_thread = threading.Thread(target=self.process_audio)
+        process_thread.daemon = True
+        process_thread.start()
         
-        # 启动处理线程
-        self.process_thread = threading.Thread(target=self._process_audio)
-        self.process_thread.daemon = True
-        self.process_thread.start()
-        
-        logger.info("唤醒词监听器已启动")
-    
-    def stop(self):
-        """停止监听"""
-        if not self.is_listening:
-            return
+        try:
+            # 开始录音
+            with sd.InputStream(
+                samplerate=self.sample_rate,
+                channels=self.channels,
+                callback=self.audio_callback,
+                device=self.device_id  # 指定麦克风设备
+            ):
+                logger.info(f"开始监听唤醒词: {self.wake_word}")
+                logger.info("按 Ctrl+C 停止监听")
+                
+                while self.is_listening:
+                    time.sleep(0.1)
+                    
+        except KeyboardInterrupt:
+            logger.info("唤醒词监听器已停止")
+        finally:
+            self.is_listening = False
             
-        self.is_listening = False
-        if hasattr(self, 'listen_thread'):
-            self.listen_thread.join(timeout=1)
-        if hasattr(self, 'process_thread'):
-            self.process_thread.join(timeout=1)
-            
-        logger.info("唤醒词监听器已停止")
-
 def main():
-    """主函数"""
-    try:
-        # 显示可用的麦克风设备
-        listener = WakeWordListener()
-        devices = listener._get_available_microphones()
-        if devices:
-            print("可用的麦克风设备:")
-            for device in devices:
-                print(f"  - {device}")
-        else:
-            print("未检测到可用的麦克风设备")
-            return
-        
-        def on_wake():
-            print("机器人被唤醒!")
-        
-        listener.start(callback=on_wake)
-        print("按Ctrl+C停止监听...")
-        while True:
-            time.sleep(1)
-    except MicrophoneError as e:
-        print(f"错误: {str(e)}")
-    except KeyboardInterrupt:
-        listener.stop()
-        print("\n监听已停止")
-    except Exception as e:
-        print(f"发生错误: {str(e)}")
+    # 创建唤醒词监听器，使用 USB Camera 的麦克风 (device_id=2)
+    listener = WakeWordListener(device_id=2)
+    
+    # 开始监听
+    listener.start_listening()
 
 if __name__ == "__main__":
     main() 
