@@ -74,7 +74,7 @@ def predict(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="./llava-v1.5-13b")
+    parser.add_argument("--model-path", type=str, default=os.path.expanduser("~/models/fastvlm/llava-v1.5-13b"))
     parser.add_argument("--model-base", type=str, default=None)
     parser.add_argument("--image-file", type=str, default=None, help="location of image file")
     parser.add_argument("--prompt", type=str, default="Describe the image.", help="Prompt for VLM.")
