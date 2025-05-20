@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  fastvlm:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ~/models:/app/checkpoints
+      - ~/logs:/app/logs
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nvidia-smi"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
