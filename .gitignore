@@ -47,4 +47,6 @@ big_brain/models/cache/
 
 # 系统文件
 .DS_Store
-Thumbs.db 
+Thumbs.db
+**/__MACOSX/
+**/.DS_Store 
