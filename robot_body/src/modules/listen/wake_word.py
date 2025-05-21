@@ -3,7 +3,7 @@
 
 """
 唤醒词监听模块
-用于监听麦克风输入，检测唤醒词"乐迪乐迪"
+用于监听麦克风输入，检测唤醒词"你好小智"
 """
 
 import threading
@@ -20,6 +20,7 @@ import tempfile
 import pygame
 import sounddevice as sd
 import numpy as np
+from scipy import signal
 
 # 配置日志
 logging.basicConfig(
@@ -59,14 +60,19 @@ class WakeWordListener:
     def __init__(self, wake_word="你好小智", device_id=None):  # 默认不指定设备
         self.wake_word = wake_word
         self.recognizer = sr.Recognizer()
-        self.recognizer.energy_threshold = 300  # 降低能量阈值
-        self.recognizer.dynamic_energy_threshold = True  # 启用动态能量阈值
-        self.recognizer.pause_threshold = 0.8  # 设置停顿阈值
+        self.recognizer.energy_threshold = 100  # 进一步降低能量阈值
+        self.recognizer.dynamic_energy_threshold = True
+        self.recognizer.dynamic_energy_adjustment_damping = 0.15
+        self.recognizer.dynamic_energy_ratio = 1.5
+        self.recognizer.pause_threshold = 0.5  # 降低停顿阈值
         self.audio_queue = queue.Queue()
         self.is_listening = False
         self.volume_threshold = 0.01  # 音量阈值
         self.audio_buffer = []  # 音频缓冲区
-        self.buffer_size = 10  # 缓冲区大小
+        self.buffer_size = 20  # 增加缓冲区大小
+        self.silence_threshold = 0.015  # 静音阈值
+        self.silence_duration = 0.5  # 静音持续时间（秒）
+        self.last_sound_time = time.time()
         
         # 获取可用的输入设备
         input_devices = list_input_devices()
@@ -92,6 +98,19 @@ class WakeWordListener:
         
         logger.info(f"使用设备 {self.device_id}: {self.device_info['name']} (通道数: {self.channels}, 采样率: {self.sample_rate}Hz)")
         
+    def preprocess_audio(self, audio_data):
+        """预处理音频数据"""
+        # 应用高通滤波器去除低频噪声
+        nyquist = self.sample_rate / 2
+        cutoff = 100  # 100Hz
+        b, a = signal.butter(4, cutoff/nyquist, btype='high')
+        filtered_audio = signal.filtfilt(b, a, audio_data)
+        
+        # 归一化音频数据
+        normalized_audio = filtered_audio / np.max(np.abs(filtered_audio))
+        
+        return normalized_audio
+        
     def audio_callback(self, indata, frames, time, status):
         """音频回调函数，将音频数据放入队列"""
         if status:
@@ -99,16 +118,27 @@ class WakeWordListener:
         
         # 计算音量
         volume = np.abs(indata).mean()
+        current_time = time.time()
+        
         if volume > self.volume_threshold:
             logger.info(f"检测到声音，音量: {volume:.4f}")
+            self.last_sound_time = current_time
             self.audio_buffer.append(indata.copy())
             
             # 当缓冲区达到指定大小时，将数据放入队列
             if len(self.audio_buffer) >= self.buffer_size:
                 # 合并缓冲区中的音频数据
                 combined_audio = np.concatenate(self.audio_buffer)
-                self.audio_queue.put(combined_audio)
+                # 预处理音频数据
+                processed_audio = self.preprocess_audio(combined_audio)
+                self.audio_queue.put(processed_audio)
                 self.audio_buffer = []  # 清空缓冲区
+        elif current_time - self.last_sound_time > self.silence_duration and self.audio_buffer:
+            # 如果检测到静音且缓冲区有数据，处理剩余的音频
+            combined_audio = np.concatenate(self.audio_buffer)
+            processed_audio = self.preprocess_audio(combined_audio)
+            self.audio_queue.put(processed_audio)
+            self.audio_buffer = []
         
     def process_audio(self):
         """处理音频数据"""
