@@ -59,9 +59,14 @@ class WakeWordListener:
     def __init__(self, wake_word="你好小智", device_id=None):  # 默认不指定设备
         self.wake_word = wake_word
         self.recognizer = sr.Recognizer()
+        self.recognizer.energy_threshold = 300  # 降低能量阈值
+        self.recognizer.dynamic_energy_threshold = True  # 启用动态能量阈值
+        self.recognizer.pause_threshold = 0.8  # 设置停顿阈值
         self.audio_queue = queue.Queue()
         self.is_listening = False
         self.volume_threshold = 0.01  # 音量阈值
+        self.audio_buffer = []  # 音频缓冲区
+        self.buffer_size = 10  # 缓冲区大小
         
         # 获取可用的输入设备
         input_devices = list_input_devices()
@@ -96,7 +101,14 @@ class WakeWordListener:
         volume = np.abs(indata).mean()
         if volume > self.volume_threshold:
             logger.info(f"检测到声音，音量: {volume:.4f}")
-            self.audio_queue.put(indata.copy())
+            self.audio_buffer.append(indata.copy())
+            
+            # 当缓冲区达到指定大小时，将数据放入队列
+            if len(self.audio_buffer) >= self.buffer_size:
+                # 合并缓冲区中的音频数据
+                combined_audio = np.concatenate(self.audio_buffer)
+                self.audio_queue.put(combined_audio)
+                self.audio_buffer = []  # 清空缓冲区
         
     def process_audio(self):
         """处理音频数据"""
@@ -118,6 +130,7 @@ class WakeWordListener:
                 
                 # 使用Google语音识别
                 try:
+                    logger.info("开始语音识别...")
                     text = self.recognizer.recognize_google(audio, language='zh-CN')
                     logger.info(f"识别到的文字: {text}")
                     
@@ -127,7 +140,7 @@ class WakeWordListener:
                         # 这里可以添加唤醒后的操作
                         
                 except sr.UnknownValueError:
-                    pass  # 无法识别语音
+                    logger.info("无法识别语音")
                 except sr.RequestError as e:
                     logger.error(f"无法连接到Google语音识别服务: {e}")
                     
