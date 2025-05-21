@@ -61,6 +61,7 @@ class WakeWordListener:
         self.recognizer = sr.Recognizer()
         self.audio_queue = queue.Queue()
         self.is_listening = False
+        self.volume_threshold = 0.01  # 音量阈值
         
         # 获取可用的输入设备
         input_devices = list_input_devices()
@@ -90,7 +91,12 @@ class WakeWordListener:
         """音频回调函数，将音频数据放入队列"""
         if status:
             logger.warning(f"音频状态: {status}")
-        self.audio_queue.put(indata.copy())
+        
+        # 计算音量
+        volume = np.abs(indata).mean()
+        if volume > self.volume_threshold:
+            logger.info(f"检测到声音，音量: {volume:.4f}")
+            self.audio_queue.put(indata.copy())
         
     def process_audio(self):
         """处理音频数据"""
@@ -144,7 +150,8 @@ class WakeWordListener:
                 channels=self.channels,
                 callback=self.audio_callback,
                 device=self.device_id,  # 指定麦克风设备
-                dtype=np.float32
+                dtype=np.float32,
+                blocksize=1024  # 设置较小的块大小以提高响应速度
             ):
                 logger.info(f"开始监听唤醒词: {self.wake_word}")
                 logger.info("按 Ctrl+C 停止监听")
@@ -168,8 +175,13 @@ def main():
             logger.error("未找到可用的音频输入设备")
             return
         
-        # 创建唤醒词监听器，自动查找 XFM-DP-V0.0.18 设备
-        listener = WakeWordListener()
+        # 创建唤醒词监听器，使用 XFM-DP-V0.0.18 设备
+        device_id = find_device_by_name("XFM-DP-V0.0.18")
+        if device_id is None:
+            logger.error("未找到 XFM-DP-V0.0.18 设备")
+            return
+            
+        listener = WakeWordListener(device_id=device_id)
         
         # 开始监听
         listener.start_listening()
