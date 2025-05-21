@@ -45,10 +45,18 @@ def list_input_devices():
     
     return input_devices
 
+def find_device_by_name(name: str) -> Optional[int]:
+    """根据设备名称查找设备ID"""
+    devices = sd.query_devices()
+    for i, device in enumerate(devices):
+        if name in device['name'] and device['max_input_channels'] > 0:
+            return i
+    return None
+
 class WakeWordListener:
     """唤醒词监听器类"""
     
-    def __init__(self, wake_word="你好小智", device_id=3):  # 默认使用 XFM-DP-V0.0.18 设备
+    def __init__(self, wake_word="你好小智", device_id=None):  # 默认不指定设备
         self.wake_word = wake_word
         self.recognizer = sr.Recognizer()
         self.audio_queue = queue.Queue()
@@ -59,6 +67,12 @@ class WakeWordListener:
         
         if not input_devices:
             raise MicrophoneError("未找到可用的音频输入设备")
+        
+        # 如果没有指定设备ID，尝试查找 XFM-DP-V0.0.18 设备
+        if device_id is None:
+            device_id = find_device_by_name("XFM-DP-V0.0.18")
+            if device_id is None:
+                raise MicrophoneError("未找到 XFM-DP-V0.0.18 设备")
         
         # 验证设备ID是否有效
         if device_id not in input_devices:
@@ -154,8 +168,8 @@ def main():
             logger.error("未找到可用的音频输入设备")
             return
         
-        # 创建唤醒词监听器，使用 XFM-DP-V0.0.18 设备
-        listener = WakeWordListener(device_id=3)
+        # 创建唤醒词监听器，自动查找 XFM-DP-V0.0.18 设备
+        listener = WakeWordListener()
         
         # 开始监听
         listener.start_listening()
