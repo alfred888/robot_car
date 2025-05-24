@@ -140,7 +140,7 @@ pip install -r requirements.txt
 
 2. 启动服务：
 ```bash
-python server.py
+python start_socket_service_fastvlm.py
 ```
 
 服务将在 `http://服务器IP:5000` 上运行。
@@ -190,7 +190,7 @@ tail -f ~/ml-fastvlm-logs/server.log
 
 ### 服务端配置
 
-在 `server.py` 中：
+在 `start_socket_service_fastvlm.py` 中：
 - 模型参数配置
 - WebSocket 连接设置
 - 日志配置

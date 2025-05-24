@@ -1,3 +1,36 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+from pathlib import Path
+
+def setup_virtual_env():
+    """设置和激活虚拟环境（仅支持 macOS 和 Ubuntu）"""
+    # 获取当前脚本所在目录
+    current_dir = Path(__file__).parent.absolute()
+    
+    # 虚拟环境目录
+    venv_dir = current_dir / "venv"
+    
+    # 检查虚拟环境是否存在
+    if not venv_dir.exists():
+        print("创建虚拟环境...")
+        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
+    
+    # 获取虚拟环境中的 Python 解释器路径
+    python_path = venv_dir / "bin" / "python"
+    
+    # 如果当前不在虚拟环境中，则重新启动脚本
+    if sys.executable != str(python_path):
+        print(f"激活虚拟环境: {venv_dir}")
+        # 安装依赖
+        subprocess.run([str(python_path), "-m", "pip", "install", "-r", "requirements.txt"], check=True)
+        # 使用虚拟环境的 Python 重新运行脚本
+        os.execv(str(python_path), [str(python_path), __file__] + sys.argv[1:])
+
+# 在导入其他模块之前设置虚拟环境
+setup_virtual_env()
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -16,7 +49,6 @@ import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from logging.handlers import RotatingFileHandler
-import sys
 import torch
 from transformers import AutoProcessor, AutoModelForVision2Seq
 import base64

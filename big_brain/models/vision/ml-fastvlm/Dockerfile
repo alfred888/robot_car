@@ -34,4 +34,4 @@ ENV PYTHONPATH=/app
 EXPOSE 5000
 
 # 启动命令
-CMD ["conda", "run", "-n", "fastvlm", "python", "server.py"] 
+CMD ["conda", "run", "-n", "fastvlm", "python", "start_socket_service_fastvlm.py"] 
