@@ -12,7 +12,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
 
 # 从配置文件读取树莓派配置信息
-PI_CONFIG_FILE="$PROJECT_ROOT/robot_body/config/pi_config.yaml"
+PI_CONFIG_FILE="$PROJECT_ROOT/robot_car/robot_body/config/pi_config.yaml"
 
 if [ ! -f "$PI_CONFIG_FILE" ]; then
     echo -e "${RED}错误: 找不到配置文件 $PI_CONFIG_FILE${NC}"

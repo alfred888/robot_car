@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # 从配置文件读取树莓派配置信息
-PI_CONFIG_FILE="robot_body/config/pi_config.yaml"
+PI_CONFIG_FILE="robot_car/robot_body/config/pi_config.yaml"
 
 if [ ! -f "$PI_CONFIG_FILE" ]; then
     echo -e "${RED}错误: 找不到配置文件 $PI_CONFIG_FILE${NC}"
@@ -48,15 +48,15 @@ fi
 echo -e "${YELLOW}添加新的crontab配置...${NC}"
 
 # 检查是否已存在相关配置
-if ! grep -q "robot_body/app.py" "$TEMP_CRONTAB"; then
+if ! grep -q "robot_car/robot_body/app.py" "$TEMP_CRONTAB"; then
     # 添加启动主程序的配置（开机自启）
-    echo "@reboot cd /home/$PI_USER/robot_body && ./venv/bin/python app.py >> /home/$PI_USER/robot_body/app.log 2>&1" >> "$TEMP_CRONTAB"
+    echo "@reboot cd /home/$PI_USER/robot_car/robot_body && ./venv/bin/python app.py >> /home/$PI_USER/robot_car/robot_body/app.log 2>&1" >> "$TEMP_CRONTAB"
     echo -e "${GREEN}已添加主程序自启动配置${NC}"
 fi
 
-if ! grep -q "robot_body/start_jupyter.sh" "$TEMP_CRONTAB"; then
+if ! grep -q "robot_car/robot_body/start_jupyter.sh" "$TEMP_CRONTAB"; then
     # 添加启动Jupyter的配置（开机自启）
-    echo "@reboot cd /home/$PI_USER/robot_body && ./start_jupyter.sh >> /home/$PI_USER/robot_body/jupyter.log 2>&1" >> "$TEMP_CRONTAB"
+    echo "@reboot cd /home/$PI_USER/robot_car/robot_body && ./start_jupyter.sh >> /home/$PI_USER/robot_car/robot_body/jupyter.log 2>&1" >> "$TEMP_CRONTAB"
     echo -e "${GREEN}已添加Jupyter自启动配置${NC}"
 fi
 
