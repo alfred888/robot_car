@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
 
 # FastVLM 模型路径
 MODEL_PATH = os.path.expanduser("~/models/fastvlm/llava-fastvithd_0.5b_stage3")
-PROMPT = "用简短的语言描述图片内容"
+PROMPT = "用简短的中文描述图片内容"
 
 # 全局变量
 description_queue = queue.Queue()
