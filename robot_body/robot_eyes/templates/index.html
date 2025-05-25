@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机器人视觉系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        .video-container {
+            flex: 2;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .results-container {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .video-feed {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-container">
+            <h2>实时视频流</h2>
+            <img src="{{ url_for('video_feed') }}" class="video-feed" alt="视频流">
+            <div id="status" class="status disconnected">
+                未连接到服务器
+            </div>
+        </div>
+        <div class="results-container">
+            <h2>识别结果</h2>
+            <div id="results" class="results">
+                等待识别结果...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新状态显示
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '已连接到服务器';
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '未连接到服务器';
+            }
+        }
+
+        // 更新识别结果
+        function updateResults(result) {
+            const resultsDiv = document.getElementById('results');
+            if (result) {
+                resultsDiv.innerHTML = `
+                    <p><strong>时间：</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+                    <p><strong>识别结果：</strong></p>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `;
+            }
+        }
+
+        // 建立 WebSocket 连接
+        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        
+        ws.onopen = function() {
+            updateStatus(true);
+        };
+        
+        ws.onclose = function() {
+            updateStatus(false);
+        };
+        
+        ws.onmessage = function(event) {
+            const result = JSON.parse(event.data);
+            updateResults(result);
+        };
+    </script>
+</body>
+</html> 
