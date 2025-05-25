@@ -7,11 +7,7 @@ websocket:
 camera:
   width: 640
   height: 480
-  fps: 30
   format: "RGB888"
+  fps: 30
 
-# Web 服务器配置
-web:
-  host: "0.0.0.0"
-  port: 5000
-  debug: true 
+
