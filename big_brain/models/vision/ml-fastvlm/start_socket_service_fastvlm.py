@@ -132,7 +132,6 @@ def describe_image(image_path):
     cmd = [
         "python", "predict.py",
         "--model-path", MODEL_PATH,
-        "--model-base", "llava",
         "--image-file", image_path,
         "--prompt", PROMPT,
         "--conv-mode", "qwen_2",
@@ -302,7 +301,6 @@ class ImageDescriptionServer:
                         # 准备推理参数
                         args = argparse.Namespace(
                             model_path=self.model_path,
-                            model_base="llava",
                             image_file=temp_path,
                             prompt="Describe the image.",
                             conv_mode="qwen_2",
