@@ -12,21 +12,34 @@ def setup_virtual_env():
     # 虚拟环境目录
     venv_dir = current_dir / "venv"
     
-    # 检查虚拟环境是否存在
-    if not venv_dir.exists():
-        print("创建虚拟环境...")
-        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
-    
-    # 获取虚拟环境中的 Python 解释器路径
-    python_path = venv_dir / "bin" / "python"
-    
-    # 如果当前不在虚拟环境中，则重新启动脚本
-    if sys.executable != str(python_path):
-        print(f"激活虚拟环境: {venv_dir}")
-        # 安装依赖
-        subprocess.run([str(python_path), "-m", "pip", "install", "-r", "requirements.txt"], check=True)
-        # 使用虚拟环境的 Python 重新运行脚本
-        os.execv(str(python_path), [str(python_path), __file__] + sys.argv[1:])
+    try:
+        # 检查虚拟环境是否存在
+        if not venv_dir.exists():
+            print("创建虚拟环境...")
+            subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
+        
+        # 获取虚拟环境中的 Python 解释器路径
+        python_path = venv_dir / "bin" / "python"
+        
+        # 如果当前不在虚拟环境中，则重新启动脚本
+        if sys.executable != str(python_path):
+            print(f"激活虚拟环境: {venv_dir}")
+            # 安装依赖
+            try:
+                # 先升级 pip
+                subprocess.run([str(python_path), "-m", "pip", "install", "--upgrade", "pip"], check=True)
+                # 安装依赖
+                subprocess.run([str(python_path), "-m", "pip", "install", "-r", "requirements.txt"], check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"安装依赖失败: {e}")
+                print("尝试使用 --no-deps 选项安装...")
+                subprocess.run([str(python_path), "-m", "pip", "install", "--no-deps", "-r", "requirements.txt"], check=True)
+            
+            # 使用虚拟环境的 Python 重新运行脚本
+            os.execv(str(python_path), [str(python_path), __file__] + sys.argv[1:])
+    except Exception as e:
+        print(f"设置虚拟环境时出错: {e}")
+        sys.exit(1)
 
 # 在导入其他模块之前设置虚拟环境
 setup_virtual_env()
