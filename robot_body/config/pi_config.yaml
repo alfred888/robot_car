@@ -21,7 +21,7 @@ hardware:
     sample_rate: 16000
 
 websocket:
-  server_url: "ws://192.168.0.69:8080"
+  server_url: "ws://192.168.0.69:5000"
   reconnect_interval: 5  # seconds
   ping_interval: 30      # seconds
 
