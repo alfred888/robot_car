@@ -304,7 +304,7 @@ class ImageDescriptionServer:
                             model_path=self.model_path,
                             model_base=None,
                             image_file=temp_path,
-                            prompt="Describe the image.",
+                            prompt=PROMPT,
                             conv_mode="qwen_2",
                             temperature=0.2,
                             top_p=None,
