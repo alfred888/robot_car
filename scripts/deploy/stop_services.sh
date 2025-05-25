@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # 从配置文件读取树莓派配置信息
-PI_CONFIG_FILE="robot_body/config/pi_config.yaml"
+PI_CONFIG_FILE="robot_car/robot_body/config/pi_config.yaml"
 
 if [ ! -f "$PI_CONFIG_FILE" ]; then
     echo -e "${RED}错误: 找不到配置文件 $PI_CONFIG_FILE${NC}"
