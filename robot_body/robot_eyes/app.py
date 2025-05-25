@@ -41,7 +41,9 @@ async def process_frame():
         if camera:
             frame = camera.read_frame()
             if frame is not None:
-                frame_data = camera.encode_frame(frame)
+                # 压缩图片到800*600分辨率
+                resized_frame = cv2.resize(frame, (800, 600))
+                frame_data = camera.encode_frame(resized_frame)
                 if frame_data:
                     await ws_client.send_frame(frame_data)
         await asyncio.sleep(8)  # 每8秒发送一次

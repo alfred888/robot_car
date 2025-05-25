@@ -53,11 +53,21 @@ else:
             self._init_camera()
         
         def _load_config(self):
-            """加载配置文件"""
-            config_path = Path(__file__).parent / "config.yaml"
+            """加载 YAML 配置"""
+            config_path = Path(__file__).parent.parent / "config" / "pi_config.yaml"
+            if not config_path.exists():
+                print(f"⚠️ 配置文件未找到: {config_path}，使用默认配置")
+                return {
+                    "hardware": {
+                        "camera": {
+                            "width": 640,
+                            "height": 480,
+                            "format": "RGB888"
+                        }
+                    }
+                }
             with open(config_path, 'r') as f:
                 return yaml.safe_load(f)
-        
         def _init_camera(self):
             """初始化摄像头"""
             try:
