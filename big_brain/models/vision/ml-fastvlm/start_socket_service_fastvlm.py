@@ -264,6 +264,9 @@ class ImageDescriptionServer:
             async for message in websocket:
                 try:
                     if isinstance(message, bytes):
+                        # 记录接收到的二进制数据大小
+                        logger.info(f"收到二进制图片数据，大小: {len(message)} bytes")
+                        
                         # 直接处理二进制图片数据
                         image_data = message
                         temp_path = f"temp_{client_id}.jpg"
@@ -271,9 +274,18 @@ class ImageDescriptionServer:
                             f.write(image_data)
                         logger.info(f"保存临时图片: {temp_path}")
 
+                        # 验证图片文件是否有效
+                        try:
+                            with Image.open(temp_path) as img:
+                                logger.info(f"图片尺寸: {img.size}, 模式: {img.mode}")
+                        except Exception as e:
+                            logger.error(f"图片文件无效: {str(e)}")
+                            continue
+
                         # 准备推理参数
                         args = argparse.Namespace(
                             model_path=self.model_path,
+                            model_base="llava",
                             image_file=temp_path,
                             prompt="Describe the image.",
                             conv_mode="qwen_2",
@@ -284,22 +296,32 @@ class ImageDescriptionServer:
 
                         # 执行推理
                         logger.info(f"开始推理: client_id={client_id}")
-                        description = predict(args)
-                        logger.info(f"推理完成: {description}")
+                        try:
+                            description = predict(args)
+                            logger.info(f"推理完成: {description}")
 
-                        # 发送结果
-                        response = {
-                            "type": "description",
-                            "content": description
-                        }
-                        await websocket.send(json.dumps(response))
-                        logger.info(f"已发送结果到客户端 {client_id}")
+                            # 发送结果
+                            response = {
+                                "type": "description",
+                                "content": description
+                            }
+                            await websocket.send(json.dumps(response))
+                            logger.info(f"已发送结果到客户端 {client_id}")
+                        except Exception as e:
+                            logger.error(f"推理过程出错: {str(e)}")
+                            await websocket.send(json.dumps({
+                                "type": "error",
+                                "content": f"推理失败: {str(e)}"
+                            }))
 
                         # 清理临时文件
-                        os.remove(temp_path)
-                        logger.info(f"已删除临时文件: {temp_path}")
+                        try:
+                            os.remove(temp_path)
+                            logger.info(f"已删除临时文件: {temp_path}")
+                        except Exception as e:
+                            logger.error(f"删除临时文件失败: {str(e)}")
                     else:
-                        logger.error(f"收到非二进制消息，已忽略。")
+                        logger.error(f"收到非二进制消息，已忽略。消息类型: {type(message)}")
                 except Exception as e:
                     logger.error(f"处理客户端 {client_id} 消息时出错: {str(e)}")
                     await websocket.send(json.dumps({
