@@ -137,12 +137,15 @@ def describe_image(image_path):
         "--prompt", PROMPT,
         "--conv-mode", "qwen_2",
         "--temperature", "0.2",
-        "--num_beams", "1"
+        "--num_beams", "1",
+        "--tokenizer-path", os.path.join(MODEL_PATH, "vocab.json"),
+        "--tokenizer-type", "llama"
     ]
     
     print_progress(f"🔍 正在描述图片: {image_path}")
     print_progress(f"📝 使用的提示词: {PROMPT}")
     print_progress(f"📝 使用的模型路径: {MODEL_PATH}")
+    print_progress(f"📝 使用的命令: {' '.join(cmd)}")
     
     if is_model_loading:
         print_progress("⏳ 首次运行，模型正在加载中...")
@@ -360,7 +363,7 @@ class ImageDescriptionServer:
 if __name__ == "__main__":
     # 设置参数
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="./checkpoints/fastvlm_0.5b_stage3")
+    parser.add_argument("--model-path", type=str, default="~/models/fastvlm/llava-fastvithd_0.5b_stage3")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=5000)
     args = parser.parse_args()
