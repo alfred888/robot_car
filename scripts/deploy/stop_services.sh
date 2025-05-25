@@ -14,10 +14,10 @@ if [ ! -f "$PI_CONFIG_FILE" ]; then
     exit 1
 fi
 
-# 使用yq读取yaml配置
-PI_HOST=$(yq eval '.raspberry_pi.host' "$PI_CONFIG_FILE")
-PI_USER=$(yq eval '.raspberry_pi.username' "$PI_CONFIG_FILE")
-PI_PORT=$(yq eval '.raspberry_pi.ssh_port' "$PI_CONFIG_FILE")
+# 使用Python读取yaml配置
+PI_HOST=$(python3 -c "import yaml; f=open('$PI_CONFIG_FILE'); data=yaml.safe_load(f); print(data['raspberry_pi']['host'])")
+PI_USER=$(python3 -c "import yaml; f=open('$PI_CONFIG_FILE'); data=yaml.safe_load(f); print(data['raspberry_pi']['username'])")
+PI_PORT=$(python3 -c "import yaml; f=open('$PI_CONFIG_FILE'); data=yaml.safe_load(f); print(data['raspberry_pi']['ssh_port'])")
 
 if [ -z "$PI_HOST" ] || [ -z "$PI_USER" ] || [ -z "$PI_PORT" ]; then
     echo -e "${RED}错误: 配置文件中缺少必要的树莓派连接信息${NC}"
