@@ -122,6 +122,12 @@ def describe_image(image_path):
     """调用 FastVLM 模型描述图像内容"""
     global is_model_loading
     
+    # 确保模型路径存在
+    if not os.path.exists(MODEL_PATH):
+        error_msg = f"模型路径不存在: {MODEL_PATH}"
+        print_progress(f"❌ {error_msg}")
+        return error_msg
+    
     cmd = [
         "python", "predict.py",
         "--model-path", MODEL_PATH,
@@ -135,33 +141,39 @@ def describe_image(image_path):
     
     print_progress(f"🔍 正在描述图片: {image_path}")
     print_progress(f"📝 使用的提示词: {PROMPT}")
+    print_progress(f"📝 使用的模型路径: {MODEL_PATH}")
     
     if is_model_loading:
         print_progress("⏳ 首次运行，模型正在加载中...")
         is_model_loading = False
     
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    description = result.stdout.strip()
-    error = result.stderr.strip()
-    
-    if error:
-        print_progress(f"❌ 错误信息:")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        description = result.stdout.strip()
+        error = result.stderr.strip()
+        
+        if error:
+            print_progress(f"❌ 错误信息:")
+            print("=" * 50)
+            print(error)
+            print("=" * 50)
+            return f"处理出错: {error}"
+        
+        if not description:
+            print_progress("⚠️ 警告: 模型没有返回任何描述")
+            return "模型没有返回任何描述"
+        
+        print_progress("✨ 描述结果:")
         print("=" * 50)
-        print(error)
+        print(description)
         print("=" * 50)
-        return f"处理出错: {error}"
-    
-    if not description:
-        print_progress("⚠️ 警告: 模型没有返回任何描述")
-        return "模型没有返回任何描述"
-    
-    print_progress("✨ 描述结果:")
-    print("=" * 50)
-    print(description)
-    print("=" * 50)
-    print()
-    
-    return description
+        print()
+        
+        return description
+    except subprocess.CalledProcessError as e:
+        error_msg = f"执行命令失败: {e}\n输出: {e.output}\n错误: {e.stderr}"
+        print_progress(f"❌ {error_msg}")
+        return error_msg
 
 async def process_image(websocket, image_data):
     """处理接收到的图片数据"""
