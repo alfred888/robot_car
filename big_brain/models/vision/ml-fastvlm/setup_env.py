@@ -41,11 +41,37 @@ def create_conda_env():
 def install_dependencies():
     """安装项目依赖"""
     print("正在安装项目依赖...")
+    
+    # 基础依赖
+    base_deps = [
+        "opencv-python",
+        "numpy",
+        "pillow",
+        "fastapi",
+        "uvicorn",
+        "websockets",
+        "torch",
+        "transformers",
+        "peft",
+        "sentencepiece"
+    ]
+    
+    # 安装基础依赖
+    for dep in base_deps:
+        print(f"安装 {dep}...")
+        subprocess.run([
+            "conda", "run", "-n", ENV_NAME,
+            "pip", "install", dep
+        ], check=True)
+    
+    # 安装项目依赖
+    print("安装项目依赖...")
     subprocess.run([
         "conda", "run", "-n", ENV_NAME,
         "pip", "install", "-e", "."
     ], check=True)
-    print("依赖安装完成")
+    
+    print("所有依赖安装完成")
 
 def main():
     check_conda()
