@@ -129,6 +129,9 @@ def install_requirements():
     requirements = Path(__file__).parent / "requirements.txt"
     
     print("安装依赖包...")
+    # 先升级 pip
+    subprocess.run([str(venv_python), "-m", "pip", "install", "--upgrade", "pip"])
+    # 安装依赖
     subprocess.run([str(venv_python), "-m", "pip", "install", "-r", str(requirements)])
     print("依赖包安装完成")
 
@@ -137,8 +140,10 @@ def activate_venv():
     venv_path = Path(__file__).parent / "venv"
     if sys.platform == "win32":
         activate_script = venv_path / "Scripts/activate"
+        python_path = venv_path / "Scripts/python"
     else:
         activate_script = venv_path / "bin/activate"
+        python_path = venv_path / "bin/python"
     
     if not activate_script.exists():
         print(f"错误：找不到虚拟环境激活脚本: {activate_script}")
@@ -153,7 +158,10 @@ def activate_venv():
     else:
         env["PATH"] = str(venv_path / "bin") + os.pathsep + env["PATH"]
     
-    return env
+    # 设置 PYTHONPATH
+    env["PYTHONPATH"] = str(Path(__file__).parent) + os.pathsep + env.get("PYTHONPATH", "")
+    
+    return env, str(python_path)
 
 def main():
     """主函数"""
@@ -164,12 +172,12 @@ def main():
     install_requirements()
     
     # 激活虚拟环境
-    env = activate_venv()
+    env, python_path = activate_venv()
     
     # 运行主程序
     app_path = Path(__file__).parent / "app.py"
     print("启动视觉模块...")
-    subprocess.run([sys.executable, str(app_path)], env=env)
+    subprocess.run([python_path, str(app_path)], env=env)
 
 if __name__ == "__main__":
     main() 
