@@ -8,10 +8,10 @@ if [ -n "$SUDO_USER" ] || [ -n "$SUDO_UID" ]; then
 fi
 
 # Define the first cron job and its schedule
-cron_job1="@reboot XDG_RUNTIME_DIR=/run/user/$(id -u) ~/ugv_rpi/ugv-env/bin/python ~/ugv_rpi/app.py >> ~/ugv.log 2>&1"
+cron_job1="@reboot XDG_RUNTIME_DIR=/run/user/$(id -u) ~/robot_car/robot_body/ugv-env/bin/python ~/robot_car/robot_body/app.py >> ~/ugv.log 2>&1"
 
 # Define the second cron job for starting Jupyter
-cron_job2="@reboot /bin/bash ~/ugv_rpi/start_jupyter.sh >> ~/jupyter_log.log 2>&1"
+cron_job2="@reboot /bin/bash ~/robot_car/robot_body/start_jupyter.sh >> ~/jupyter_log.log 2>&1"
 
 # Check if the first cron job already exists in the user's crontab
 if crontab -l | grep -q "$cron_job1"; then
