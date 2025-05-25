@@ -84,7 +84,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # FastVLM 模型路径
-MODEL_PATH = os.path.expanduser("~/models/llava-fastvithd_0.5b_stage3")
+MODEL_PATH = os.path.expanduser("~/models/fastvlm/llava-fastvithd_0.5b_stage3")
 PROMPT = "用简短的语言描述图片内容"
 
 # 全局变量
@@ -125,8 +125,12 @@ def describe_image(image_path):
     cmd = [
         "python", "predict.py",
         "--model-path", MODEL_PATH,
+        "--model-base", "llava",
         "--image-file", image_path,
-        "--prompt", PROMPT
+        "--prompt", PROMPT,
+        "--conv-mode", "qwen_2",
+        "--temperature", "0.2",
+        "--num_beams", "1"
     ]
     
     print_progress(f"🔍 正在描述图片: {image_path}")
