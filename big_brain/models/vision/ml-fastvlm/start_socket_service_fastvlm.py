@@ -263,51 +263,43 @@ class ImageDescriptionServer:
         try:
             async for message in websocket:
                 try:
-                    # 解析消息
-                    data = json.loads(message)
-                    if 'image' not in data:
-                        logger.error(f"客户端 {client_id} 发送的消息缺少图片数据")
-                        continue
+                    if isinstance(message, bytes):
+                        # 直接处理二进制图片数据
+                        image_data = message
+                        temp_path = f"temp_{client_id}.jpg"
+                        with open(temp_path, "wb") as f:
+                            f.write(image_data)
+                        logger.info(f"保存临时图片: {temp_path}")
 
-                    # 解码图片
-                    image_data = base64.b64decode(data['image'])
-                    image = Image.open(io.BytesIO(image_data))
-                    
-                    # 保存临时图片
-                    temp_path = f"temp_{client_id}.jpg"
-                    image.save(temp_path)
-                    logger.info(f"保存临时图片: {temp_path}")
+                        # 准备推理参数
+                        args = argparse.Namespace(
+                            model_path=self.model_path,
+                            image_file=temp_path,
+                            prompt="Describe the image.",
+                            conv_mode="qwen_2",
+                            temperature=0.2,
+                            top_p=None,
+                            num_beams=1
+                        )
 
-                    # 准备推理参数
-                    args = argparse.Namespace(
-                        model_path=self.model_path,
-                        image_file=temp_path,
-                        prompt="Describe the image.",
-                        conv_mode="qwen_2",
-                        temperature=0.2,
-                        top_p=None,
-                        num_beams=1
-                    )
+                        # 执行推理
+                        logger.info(f"开始推理: client_id={client_id}")
+                        description = predict(args)
+                        logger.info(f"推理完成: {description}")
 
-                    # 执行推理
-                    logger.info(f"开始推理: client_id={client_id}")
-                    description = predict(args)
-                    logger.info(f"推理完成: {description}")
+                        # 发送结果
+                        response = {
+                            "type": "description",
+                            "content": description
+                        }
+                        await websocket.send(json.dumps(response))
+                        logger.info(f"已发送结果到客户端 {client_id}")
 
-                    # 发送结果
-                    response = {
-                        "type": "description",
-                        "content": description
-                    }
-                    await websocket.send(json.dumps(response))
-                    logger.info(f"已发送结果到客户端 {client_id}")
-
-                    # 清理临时文件
-                    os.remove(temp_path)
-                    logger.info(f"已删除临时文件: {temp_path}")
-
-                except json.JSONDecodeError:
-                    logger.error(f"客户端 {client_id} 发送的消息格式错误")
+                        # 清理临时文件
+                        os.remove(temp_path)
+                        logger.info(f"已删除临时文件: {temp_path}")
+                    else:
+                        logger.error(f"收到非二进制消息，已忽略。")
                 except Exception as e:
                     logger.error(f"处理客户端 {client_id} 消息时出错: {str(e)}")
                     await websocket.send(json.dumps({
