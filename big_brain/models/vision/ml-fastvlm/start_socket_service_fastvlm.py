@@ -16,7 +16,16 @@ def setup_virtual_env():
         # 检查虚拟环境是否存在
         if not venv_dir.exists():
             print("创建虚拟环境...")
-            subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
+            # 尝试使用 python3.9
+            try:
+                subprocess.run(["python3.9", "-m", "venv", str(venv_dir)], check=True)
+            except subprocess.CalledProcessError:
+                print("python3.9 不可用，尝试使用 python3.8...")
+                try:
+                    subprocess.run(["python3.8", "-m", "venv", str(venv_dir)], check=True)
+                except subprocess.CalledProcessError:
+                    print("python3.8 不可用，尝试使用 python3...")
+                    subprocess.run(["python3", "-m", "venv", str(venv_dir)], check=True)
         
         # 获取虚拟环境中的 Python 解释器路径
         python_path = venv_dir / "bin" / "python"
