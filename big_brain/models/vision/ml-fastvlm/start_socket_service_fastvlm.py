@@ -3,48 +3,27 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+from setup_env import check_conda, create_conda_env, install_dependencies
 
 def setup_virtual_env():
-    """设置和激活虚拟环境（仅支持 macOS 和 Ubuntu）"""
-    # 获取当前脚本所在目录
-    current_dir = Path(__file__).parent.absolute()
+    """设置和激活 conda 虚拟环境"""
+    # 检查 conda 是否安装
+    check_conda()
     
-    # 虚拟环境目录
-    venv_dir = current_dir / "venv"
+    # 创建并配置环境
+    create_conda_env()
     
-    try:
-        # 检查虚拟环境是否存在
-        if not venv_dir.exists():
-            print("创建虚拟环境...")
-            # 尝试使用 python3
-            try:
-                subprocess.run(["python3", "-m", "venv", str(venv_dir)], check=True)
-            except subprocess.CalledProcessError:
-                print("python3 不可用，尝试使用 python...")
-                subprocess.run(["python", "-m", "venv", str(venv_dir)], check=True)
-        
-        # 获取虚拟环境中的 Python 解释器路径
-        python_path = venv_dir / "bin" / "python"
-        
-        # 如果当前不在虚拟环境中，则重新启动脚本
-        if sys.executable != str(python_path):
-            print(f"激活虚拟环境: {venv_dir}")
-            # 安装依赖
-            try:
-                # 先升级 pip
-                subprocess.run([str(python_path), "-m", "pip", "install", "--upgrade", "pip"], check=True)
-                # 安装依赖
-                subprocess.run([str(python_path), "-m", "pip", "install", "-r", "requirements.txt"], check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"安装依赖失败: {e}")
-                print("尝试使用 --no-deps 选项安装...")
-                subprocess.run([str(python_path), "-m", "pip", "install", "--no-deps", "-r", "requirements.txt"], check=True)
-            
-            # 使用虚拟环境的 Python 重新运行脚本
-            os.execv(str(python_path), [str(python_path), __file__] + sys.argv[1:])
-    except Exception as e:
-        print(f"设置虚拟环境时出错: {e}")
-        sys.exit(1)
+    # 安装依赖
+    install_dependencies()
+    
+    # 获取 conda 环境的 Python 路径
+    conda_path = subprocess.run(["conda", "info", "--base"], capture_output=True, text=True).stdout.strip()
+    python_path = os.path.join(conda_path, "envs", "fastvlm", "bin", "python")
+    
+    # 如果当前不在正确的 conda 环境中，则重新启动脚本
+    if sys.executable != python_path:
+        print("切换到 fastvlm 环境...")
+        os.execv(python_path, [python_path, __file__] + sys.argv[1:])
 
 # 在导入其他模块之前设置虚拟环境
 setup_virtual_env()
