@@ -1,0 +1,17 @@
+# WebSocket 服务器配置
+websocket:
+  server_url: "ws://192.168.0.69:8080"
+  reconnect_interval: 5  # 重连间隔（秒）
+
+# 摄像头配置
+camera:
+  width: 640
+  height: 480
+  fps: 30
+  format: "RGB888"
+
+# Web 服务器配置
+web:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true 

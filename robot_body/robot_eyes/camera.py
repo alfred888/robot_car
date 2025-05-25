@@ -1,48 +1,58 @@
+#!/usr/bin/env python3
 import cv2
 import numpy as np
 from picamera2 import Picamera2
-import time
+import yaml
+from pathlib import Path
 
 class Camera:
     def __init__(self):
         """初始化摄像头"""
+        self.config = self._load_config()
+        self.camera = None
+        self._init_camera()
+        
+    def _load_config(self):
+        """加载配置文件"""
+        config_path = Path(__file__).parent / "config.yaml"
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
+    
+    def _init_camera(self):
+        """初始化摄像头"""
         try:
-            # 尝试使用 Picamera2（树莓派专用）
-            self.picam2 = Picamera2()
-            self.picam2.configure(self.picam2.create_preview_configuration(
-                main={"format": 'XRGB8888', "size": (640, 480)}))
-            self.picam2.start()
-            self.use_picamera = True
+            self.camera = Picamera2()
+            camera_config = self.camera.create_preview_configuration(
+                main={"size": (self.config['camera']['width'], 
+                             self.config['camera']['height']),
+                      "format": self.config['camera']['format']}
+            )
+            self.camera.configure(camera_config)
+            self.camera.start()
+            print("摄像头初始化成功")
         except Exception as e:
-            print(f"Picamera2 初始化失败: {e}")
-            # 如果 Picamera2 失败，使用 OpenCV 摄像头
-            self.cap = cv2.VideoCapture(0)
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            self.use_picamera = False
-
+            print(f"摄像头初始化失败: {e}")
+            raise
+    
     def read_frame(self):
         """读取一帧图像"""
-        if self.use_picamera:
-            frame = self.picam2.capture_array()
-            # 转换颜色空间从 XRGB 到 BGR
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-        else:
-            ret, frame = self.cap.read()
-            if not ret:
-                return None
-        return frame
-
+        try:
+            frame = self.camera.capture_array()
+            return frame
+        except Exception as e:
+            print(f"读取图像失败: {e}")
+            return None
+    
     def encode_frame(self, frame):
         """将图像编码为 JPEG 格式"""
-        if frame is None:
+        try:
+            _, buffer = cv2.imencode('.jpg', frame)
+            return buffer.tobytes()
+        except Exception as e:
+            print(f"图像编码失败: {e}")
             return None
-        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-        return buffer.tobytes()
-
-    def release(self):
-        """释放摄像头资源"""
-        if self.use_picamera:
-            self.picam2.stop()
-        else:
-            self.cap.release() 
+    
+    def __del__(self):
+        """清理资源"""
+        if self.camera:
+            self.camera.stop() 
