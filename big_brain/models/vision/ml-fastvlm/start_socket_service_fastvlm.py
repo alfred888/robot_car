@@ -257,7 +257,7 @@ class ImageDescriptionServer:
         logger.info(f"初始化服务器: host={host}, port={port}")
         logger.info(f"模型路径: {model_path}")
 
-    async def handle_client(self, websocket, path):
+    async def handle_client(self, websocket):
         client_id = id(websocket)
         logger.info(f"新客户端连接: {client_id}")
         try:
