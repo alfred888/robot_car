@@ -10,15 +10,16 @@ def setup_virtual_env():
     # 检查 conda 是否安装
     check_conda()
     
-    # 创建并配置环境
-    create_conda_env()
-    
-    # 安装依赖
-    install_dependencies()
-    
     # 获取 conda 环境的 Python 路径
     conda_path = subprocess.run(["conda", "info", "--base"], capture_output=True, text=True).stdout.strip()
     python_path = os.path.join(conda_path, "envs", "fastvlm", "bin", "python")
+    
+    # 检查环境是否存在
+    result = subprocess.run(["conda", "env", "list"], capture_output=True, text=True)
+    if "fastvlm" not in result.stdout:
+        # 环境不存在时创建并配置
+        create_conda_env()
+        install_dependencies()
     
     # 如果当前不在正确的 conda 环境中，则重新启动脚本
     if sys.executable != python_path:
