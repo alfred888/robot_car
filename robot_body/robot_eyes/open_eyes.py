@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import venv
+from pathlib import Path
 import asyncio
 import json
 from flask import Flask, render_template, Response
@@ -109,10 +115,61 @@ async def main():
             await ws_client.receive_results()
             await asyncio.sleep(0.1)
 
-if __name__ == '__main__':
-    # 启动异步任务
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
+def check_venv():
+    """检查虚拟环境是否存在，如果不存在则创建"""
+    venv_path = Path(__file__).parent / "venv"
+    if not venv_path.exists():
+        print("创建虚拟环境...")
+        venv.create(venv_path, with_pip=True)
+        print("虚拟环境创建完成")
+
+def install_requirements():
+    """安装依赖包"""
+    venv_python = Path(__file__).parent / "venv/bin/python"
+    requirements = Path(__file__).parent / "requirements.txt"
     
-    # 启动 Flask 应用
-    app.run(host='0.0.0.0', port=8080, debug=True, use_reloader=False) 
+    print("安装依赖包...")
+    subprocess.run([str(venv_python), "-m", "pip", "install", "-r", str(requirements)])
+    print("依赖包安装完成")
+
+def activate_venv():
+    """激活虚拟环境"""
+    venv_path = Path(__file__).parent / "venv"
+    if sys.platform == "win32":
+        activate_script = venv_path / "Scripts/activate"
+    else:
+        activate_script = venv_path / "bin/activate"
+    
+    if not activate_script.exists():
+        print(f"错误：找不到虚拟环境激活脚本: {activate_script}")
+        sys.exit(1)
+    
+    # 获取当前环境变量
+    env = os.environ.copy()
+    
+    # 修改 PATH 环境变量
+    if sys.platform == "win32":
+        env["PATH"] = str(venv_path / "Scripts") + os.pathsep + env["PATH"]
+    else:
+        env["PATH"] = str(venv_path / "bin") + os.pathsep + env["PATH"]
+    
+    return env
+
+def main():
+    """主函数"""
+    # 检查虚拟环境
+    check_venv()
+    
+    # 安装依赖
+    install_requirements()
+    
+    # 激活虚拟环境
+    env = activate_venv()
+    
+    # 运行主程序
+    app_path = Path(__file__).parent / "app.py"
+    print("启动视觉模块...")
+    subprocess.run([sys.executable, str(app_path)], env=env)
+
+if __name__ == "__main__":
+    main() 
