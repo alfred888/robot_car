@@ -6,18 +6,23 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# 获取项目根目录（脚本目录的上两级）
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
+
 # 从配置文件读取树莓派配置信息
-PI_CONFIG_FILE="/home/$(logname)/robot_car/robot_body/config/pi_config.yaml"
+PI_CONFIG_FILE="$PROJECT_ROOT/robot_body/config/pi_config.yaml"
 
 if [ ! -f "$PI_CONFIG_FILE" ]; then
     echo -e "${RED}错误: 找不到配置文件 $PI_CONFIG_FILE${NC}"
     exit 1
 fi
 
-# 使用Python读取yaml配置
-PI_HOST=$(python3 -c "import yaml; f=open('$PI_CONFIG_FILE'); data=yaml.safe_load(f); print(data['raspberry_pi']['host'])")
-PI_USER=$(python3 -c "import yaml; f=open('$PI_CONFIG_FILE'); data=yaml.safe_load(f); print(data['raspberry_pi']['username'])")
-PI_PORT=$(python3 -c "import yaml; f=open('$PI_CONFIG_FILE'); data=yaml.safe_load(f); print(data['raspberry_pi']['ssh_port'])")
+# 使用yq读取yaml配置
+PI_HOST=$(yq eval '.raspberry_pi.host' "$PI_CONFIG_FILE")
+PI_USER=$(yq eval '.raspberry_pi.username' "$PI_CONFIG_FILE")
+PI_PORT=$(yq eval '.raspberry_pi.ssh_port' "$PI_CONFIG_FILE")
 
 if [ -z "$PI_HOST" ] || [ -z "$PI_USER" ] || [ -z "$PI_PORT" ]; then
     echo -e "${RED}错误: 配置文件中缺少必要的树莓派连接信息${NC}"
