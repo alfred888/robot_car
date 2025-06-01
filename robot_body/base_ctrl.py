@@ -7,6 +7,10 @@ import os
 import time
 import glob
 import numpy as np
+import logging
+
+# 日志配置（由主程序统一加载，这里只获取 logger）
+logger = logging.getLogger('hardware')
 
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
@@ -22,14 +26,14 @@ class ReadLine:
 		self.sensor_list = []
 		try:
 			self.sensor_data_ser = serial.Serial(glob.glob('/dev/ttyUSB*')[0], 115200)
-			print("/dev/ttyUSB* connected succeed")
+			logger.info("/dev/ttyUSB* connected succeed")
 		except:
 			self.sensor_data_ser = None
 		self.sensor_data_max_len = 51
 
 		try:
 			self.lidar_ser = serial.Serial(glob.glob('/dev/ttyACM*')[0], 230400, timeout=1)
-			print("/dev/ttyACM* connected succeed")
+			logger.info("/dev/ttyACM* connected succeed")
 		except:
 			self.lidar_ser = None
 		self.ANGLE_PER_FRAME = 12
@@ -79,7 +83,7 @@ class ReadLine:
 				self.sensor_list.clear()
 				self.sensor_data_ser.reset_input_buffer()
 		except Exception as e:
-			print(f"[base_ctrl.read_sensor_data] error: {e}")
+			logger.error(f"[base_ctrl.read_sensor_data] error: {e}")
 
 	def parse_lidar_frame(self, data):
 		# header = data[0]
@@ -124,7 +128,7 @@ class ReadLine:
 			self.lidar_angles.clear()
 			self.lidar_distances.clear()
 		except Exception as e:
-			print(f"[base_ctrl.lidar_data_recv] error: {e}")
+			logger.error(f"[base_ctrl.lidar_data_recv] error: {e}")
 			self.lidar_ser = serial.Serial(glob.glob('/dev/ttyACM*')[0], 230400, timeout=1)
 
 
@@ -155,7 +159,7 @@ class BaseController:
 					self.base_data = self.data_buffer
 					self.data_buffer = None
 					if self.base_data["T"] == 1003:
-						print(self.base_data)
+						logger.debug(self.base_data)
 						return self.base_data
 			self.rl.clear_buffer()
 			self.data_buffer = json.loads(self.rl.readline().decode('utf-8'))
@@ -163,7 +167,7 @@ class BaseController:
 			return self.base_data
 		except Exception as e:
 			self.rl.clear_buffer()
-			print(f"[base_ctrl.feedback_data] error: {e}")
+			logger.error(f"[base_ctrl.feedback_data] error: {e}")
 
 
 	def on_data_received(self):
