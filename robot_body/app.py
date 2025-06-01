@@ -2,6 +2,7 @@
 from base_ctrl import BaseController
 import threading
 import yaml, os
+os.makedirs('logs', exist_ok=True)
 import logging.config
 
 # 配置日志
