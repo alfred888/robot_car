@@ -46,7 +46,7 @@ import time
 import logging
 import logging
 import cv_ctrl
-import audio_ctrl
+import robot_mouth.audio_ctrl as audio_ctrl
 import os_info
 
 # 获取系统信息
