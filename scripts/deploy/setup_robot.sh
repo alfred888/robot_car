@@ -160,7 +160,7 @@ echo "# Audio Config."
 sudo cp -v -f /home/$(logname)/robot_car/robot_body/asound.conf /etc/asound.conf
 
 # 配置OAK相机
-sudo cp -v -f /home/$(logname)/robot_car/robot_body/99-dai.rules /etc/udev/rules.d/99-dai.rules
+sudo cp -v -f /home/$(logname)/robot_car/robot_body/config/99-dai.rules /etc/udev/rules.d/99-dai.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 
