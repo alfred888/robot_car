@@ -7,25 +7,16 @@ import os
 import time
 import glob
 import numpy as np
-import logging.config
 
-# 配置日志
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
-os.makedirs('logs', exist_ok=True)
-
-with open(thisPath + '/config/logging_config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
-    logging.config.dictConfig(config)
-
-# 创建日志记录器
-logger = logging.getLogger('hardware')
+with open(thisPath + '/config.yaml', 'r') as yaml_file:
+    f = yaml.safe_load(yaml_file)
 
 class ReadLine:
 	def __init__(self, s):
 		self.buf = bytearray()
 		self.s = s
-		logger.debug("初始化 ReadLine 类")
 
 		self.sensor_data = []
 		self.sensor_list = []
@@ -42,7 +33,7 @@ class ReadLine:
 		except:
 			self.lidar_ser = None
 		self.ANGLE_PER_FRAME = 12
-		self.HEADER = 0x
+		self.HEADER = 0x54
 		self.lidar_angles = []
 		self.lidar_distances = []
 		self.lidar_angles_show = []
@@ -88,7 +79,7 @@ class ReadLine:
 				self.sensor_list.clear()
 				self.sensor_data_ser.reset_input_buffer()
 		except Exception as e:
-			logger.error(f"[base_ctrl.read_sensor_data] error: {e}")
+			print(f"[base_ctrl.read_sensor_data] error: {e}")
 
 	def parse_lidar_frame(self, data):
 		# header = data[0]
@@ -133,7 +124,7 @@ class ReadLine:
 			self.lidar_angles.clear()
 			self.lidar_distances.clear()
 		except Exception as e:
-			logger.error(f"[base_ctrl.lidar_data_recv] error: {e}")
+			print(f"[base_ctrl.lidar_data_recv] error: {e}")
 			self.lidar_ser = serial.Serial(glob.glob('/dev/ttyACM*')[0], 230400, timeout=1)
 
 
@@ -155,7 +146,6 @@ class BaseController:
 		self.use_lidar = f['base_config']['use_lidar']
 		self.extra_sensor = f['base_config']['extra_sensor']
 		
-		logger.info(f"初始化基础控制器: 端口={uart_dev_set}, 波特率={buad_set}")
 
 	def feedback_data(self):
 		try:
@@ -165,7 +155,7 @@ class BaseController:
 					self.base_data = self.data_buffer
 					self.data_buffer = None
 					if self.base_data["T"] == 1003:
-						logger.debug(f"接收反馈数据: {self.base_data}")
+						print(self.base_data)
 						return self.base_data
 			self.rl.clear_buffer()
 			self.data_buffer = json.loads(self.rl.readline().decode('utf-8'))
@@ -173,7 +163,7 @@ class BaseController:
 			return self.base_data
 		except Exception as e:
 			self.rl.clear_buffer()
-			logger.error(f"[base_ctrl.feedback_data] error: {e}")
+			print(f"[base_ctrl.feedback_data] error: {e}")
 
 
 	def on_data_received(self):
