@@ -154,20 +154,41 @@ class BaseController:
 	def feedback_data(self):
 		try:
 			while self.rl.s.in_waiting > 0:
-				self.data_buffer = json.loads(self.rl.readline().decode('utf-8'))
+				raw = self.rl.readline()
+				try:
+					text = raw.decode('utf-8')
+				except UnicodeDecodeError as e:
+					logger.warning(f"[decode] error: {e} | raw: {raw[:10].hex()}")
+					continue
+
+				try:
+					self.data_buffer = json.loads(text)
+				except json.JSONDecodeError as e:
+					logger.warning(f"[json] error: {e} | text: {text}")
+					continue
+
 				if 'T' in self.data_buffer:
 					self.base_data = self.data_buffer
 					self.data_buffer = None
 					if self.base_data["T"] == 1003:
 						logger.debug(self.base_data)
 						return self.base_data
+
 			self.rl.clear_buffer()
-			self.data_buffer = json.loads(self.rl.readline().decode('utf-8'))
-			self.base_data = self.data_buffer
-			return self.base_data
+
+			raw = self.rl.readline()
+			try:
+				text = raw.decode('utf-8')
+				self.data_buffer = json.loads(text)
+				self.base_data = self.data_buffer
+				return self.base_data
+			except Exception as e:
+				logger.warning(f"[feedback_data final] error: {e} | raw: {raw[:10].hex()}")
+				return None
+
 		except Exception as e:
 			self.rl.clear_buffer()
-			logger.error(f"[base_ctrl.feedback_data] error: {e}")
+			logger.error(f"[base_ctrl.feedback_data] fatal error: {e}")
 
 
 	def on_data_received(self):
