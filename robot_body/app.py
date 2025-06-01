@@ -7,6 +7,12 @@ import logging.config
 # 配置日志
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
+
+# 确保日志目录存在
+log_dir = os.path.join(os.path.dirname(thisPath), 'logs')
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
 with open(thisPath + '/config/logging_config.yaml', 'r') as f:
     config = yaml.safe_load(f)
     logging.config.dictConfig(config)
