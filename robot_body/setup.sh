@@ -157,7 +157,7 @@ sudo usermod -aG dialout $USER
 
 # 配置音频
 echo "# Audio Config."
-sudo cp -v -f /home/$(logname)/robot_car/robot_body/asound.conf /etc/asound.conf
+sudo cp -v -f /home/$(logname)/robot_car/robot_body/config/asound.conf /etc/asound.conf
 
 # 配置OAK相机
 sudo cp -v -f /home/$(logname)/robot_car/robot_body/config/99-dai.rules /etc/udev/rules.d/99-dai.rules
