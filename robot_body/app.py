@@ -9,7 +9,7 @@ curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
 
 # 确保日志目录存在
-log_dir = os.path.join(os.path.dirname(thisPath), 'logs')
+log_dir = os.path.join(thisPath, 'logs')
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
