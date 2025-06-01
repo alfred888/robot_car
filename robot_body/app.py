@@ -2,6 +2,17 @@
 from base_ctrl import BaseController
 import threading
 import yaml, os
+import logging.config
+
+# 配置日志
+curpath = os.path.realpath(__file__)
+thisPath = os.path.dirname(curpath)
+with open(thisPath + '/config/logging_config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+    logging.config.dictConfig(config)
+
+# 创建日志记录器
+logger = logging.getLogger('body')
 
 # 检查是否为树莓派5
 def is_raspberry_pi5():
@@ -9,30 +20,35 @@ def is_raspberry_pi5():
         for line in file:
             if 'Model' in line:
                 if 'Raspberry Pi 5' in line:
+                    logger.info("检测到树莓派5")
                     return True
                 else:
+                    logger.info("检测到其他型号树莓派")
                     return False
 
 # 根据树莓派型号选择串口
 if is_raspberry_pi5():
+    logger.info("使用 /dev/ttyAMA0 串口")
     base = BaseController('/dev/ttyAMA0', 115200)
 else:
+    logger.info("使用 /dev/serial0 串口")
     base = BaseController('/dev/serial0', 115200)
 
 # 启动呼吸灯线程
 threading.Thread(target=lambda: base.breath_light(15), daemon=True).start()
+logger.info("启动呼吸灯")
 
 # 读取配置文件
-curpath = os.path.realpath(__file__)
-thisPath = os.path.dirname(curpath)
 with open(thisPath + '/config.yaml', 'r') as yaml_file:
     f = yaml.safe_load(yaml_file)
+    logger.info(f"加载配置文件: {f['base_config']['robot_name']}")
 
 # OLED显示初始化信息
 base.base_oled(0, f["base_config"]["robot_name"])
 base.base_oled(1, f"sbc_version: {f['base_config']['sbc_version']}")
 base.base_oled(2, f"{f['base_config']['main_type']}{f['base_config']['module_type']}")
 base.base_oled(3, "Starting...")
+logger.info("OLED显示初始化完成")
 
 # 导入Flask及相关库
 from flask import Flask, render_template, Response, request, jsonify, redirect, url_for, send_from_directory, send_file
@@ -43,8 +59,6 @@ import json
 import uuid
 import asyncio
 import time
-import logging
-import logging
 import cv_ctrl
 import robot_mouth.audio_ctrl as audio_ctrl
 import os_info
@@ -52,10 +66,12 @@ import os_info
 # 获取系统信息
 UPLOAD_FOLDER = thisPath + '/sounds/others'
 si = os_info.SystemInfo()
+logger.info("系统信息初始化完成")
 
 # 创建Flask应用和SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app)
+logger.info("Flask应用和SocketIO初始化完成")
 
 # WebRTC连接管理
 active_pcs = {}
@@ -64,6 +80,7 @@ pcs = set()
 
 # 相机控制对象
 cvf = cv_ctrl.OpencvFuncs(thisPath, base)
+logger.info("相机控制初始化完成")
 
 # 命令与动作映射表
 cmd_actions = {
@@ -143,17 +160,19 @@ def generate_frames():
             yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n') 
         except Exception as e:
-            print("An [generate_frames] error occurred:", e)
+            logger.error(f"生成视频帧错误: {e}")
 
 # 主页路由
 @app.route('/')
 def index():
     audio_ctrl.play_random_audio("connected", False)
+    logger.info("用户访问主页")
     return render_template('index.html')
 
 # 获取配置路由
 @app.route('/config')
 def get_config():
+    logger.debug("获取配置文件")
     with open(thisPath + '/config.yaml', 'r') as file:
         yaml_content = file.read()
     return yaml_content
@@ -161,11 +180,13 @@ def get_config():
 # 静态文件服务
 @app.route('/<path:filename>')
 def serve_static(filename):
+    logger.debug(f"请求静态文件: {filename}")
     return send_from_directory('templates', filename)
 
 # 获取图片文件名
 @app.route('/get_photo_names')
 def get_photo_names():
+    logger.debug("获取图片列表")
     photo_files = sorted(os.listdir(thisPath + '/templates/pictures'), key=lambda x: os.path.getmtime(os.path.join(thisPath + '/templates/pictures', x)), reverse=True)
     return jsonify(photo_files)
 
@@ -175,18 +196,21 @@ def delete_photo():
     filename = request.form.get('filename')
     try:
         os.remove(os.path.join(thisPath + '/templates/pictures', filename))
+        logger.info(f"删除图片: {filename}")
         return jsonify(success=True)
     except Exception as e:
-        print(e)
+        logger.error(f"删除图片失败: {e}")
         return jsonify(success=False)
 
 # 视频相关路由
 @app.route('/videos/<path:filename>')
 def videos(filename):
+    logger.debug(f"请求视频文件: {filename}")
     return send_from_directory(thisPath + '/templates/videos', filename)
 
 @app.route('/get_video_names')
 def get_video_names():
+    logger.debug("获取视频列表")
     video_files = sorted(
         [filename for filename in os.listdir(thisPath + '/templates/videos/') if filename.endswith('.mp4')],
         key=lambda filename: os.path.getctime(os.path.join(thisPath + '/templates/videos/', filename)),
@@ -199,9 +223,10 @@ def delete_video():
     filename = request.form.get('filename')
     try:
         os.remove(os.path.join(thisPath + '/templates/videos', filename))
+        logger.info(f"删除视频: {filename}")
         return jsonify(success=True)
     except Exception as e:
-        print(e)
+        logger.error(f"删除视频失败: {e}")
         return jsonify(success=False)
 
 # WebRTC连接管理
@@ -210,7 +235,9 @@ def manage_connections(pc_id):
         oldest_pc_id = next(iter(active_pcs))
         old_pc = active_pcs.pop(oldest_pc_id)
         old_pc.close()
+        logger.info(f"关闭旧连接: {oldest_pc_id}")
     active_pcs[pc_id] = pc
+    logger.info(f"新建连接: {pc_id}")
 
 # WebRTC offer处理
 async def offer_async():
@@ -223,6 +250,7 @@ async def offer_async():
     await pc.createOffer(offer)
     await pc.setLocalDescription(offer)
     response_data = {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+    logger.info(f"创建WebRTC连接: {pc_id}")
     return jsonify(response_data)
 
 def offer():
@@ -233,6 +261,7 @@ def offer():
 
 # 设置产品版本
 def set_version(input_main, input_module):
+    logger.info(f"设置产品版本: main={input_main}, module={input_module}")
     base.base_json_ctrl({"T":900,"main":input_main,"module":input_module})
     if input_main == 1:
         cvf.info_update("RaspRover", (0,255,255), 0.36)
