@@ -9,6 +9,7 @@ import math
 import yaml, os, json, subprocess
 from collections import deque
 import textwrap
+import logging
 
 # 用于CSI摄像头的库
 from picamera2 import Picamera2
@@ -24,6 +25,8 @@ thisPath = os.path.dirname(curpath)
 with open(thisPath + '/config.yaml', 'r') as yaml_file:
     f = yaml.safe_load(yaml_file)
 
+# 创建日志记录器，统一使用body
+logger = logging.getLogger('body')
 
 class OpencvFuncs():
     """OpenCV功能类,用于图像处理和计算机视觉功能"""
