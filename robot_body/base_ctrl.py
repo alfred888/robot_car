@@ -217,7 +217,7 @@ class BaseController:
 		self.send_command(data)
 
 	def base_speed_ctrl(self, input_left, input_right):
-		logger.debug(f"速度控制 - 左:{input_left} 右:{input_right}")
+		logger.info(f"[base_speed_ctrl] 速度控制 - 左:{input_left} 右:{input_right}")
 		data = {"T":1,"L":input_left,"R":input_right}
 		self.send_command(data)
 
