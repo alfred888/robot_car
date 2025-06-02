@@ -208,7 +208,8 @@ class BaseController:
 
 
 	def base_json_ctrl(self, input_json):
-		logger.debug(f"基础JSON控制: {input_json}")
+
+
 		self.send_command(input_json)
 
 	def gimbal_emergency_stop(self):
