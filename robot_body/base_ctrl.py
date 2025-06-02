@@ -141,6 +141,7 @@ class BaseController:
 		self.command_queue = queue.Queue()
 		self.command_thread = threading.Thread(target=self.process_commands, daemon=True)
 		self.command_thread.start()
+		logger.info("命令处理线程已启动")
 
 		self.base_light_status = 0
 		self.head_light_status = 0
@@ -150,7 +151,7 @@ class BaseController:
 
 		self.use_lidar = f['base_config']['use_lidar']
 		self.extra_sensor = f['base_config']['extra_sensor']
-		
+		logger.info(f"激光雷达状态:{self.use_lidar},额外传感器:{self.extra_sensor}")
 
 	def feedback_data(self):
 		try:
@@ -192,22 +193,24 @@ class BaseController:
 			logger.error(f"[base_ctrl.feedback_data] fatal error: {e}")
 
 	def on_data_received(self):
+		logger.debug("重置输入缓冲区并读取数据")
 		self.ser.reset_input_buffer()
 		data_read = json.loads(self.rl.readline().decode('utf-8'))
 		return data_read
 
-
 	def send_command(self, data):
+		logger.debug(f"发送命令: {data}")
 		self.command_queue.put(data)
-
 
 	def process_commands(self):
 		while True:
 			data = self.command_queue.get()
+			logger.debug(f"处理命令: {data}")
 			self.ser.write((json.dumps(data) + '\n').encode("utf-8"))
 
-
 	def base_json_ctrl(self, input_json):
+		logger.debug(f"基础JSON控制: {input_json}")
+
 
 
 		self.send_command(input_json)
@@ -215,7 +218,7 @@ class BaseController:
 	def gimbal_emergency_stop(self):
 		logger.info("云台紧急停止")
 		data = {"T":0}
-		self.send_command(data)
+		logger.debug(f"速度控制 - 左:{input_left} 右:{input_right}")
 
 	def base_speed_ctrl(self, input_left, input_right):
 		logger.info(f"[base_speed_ctrl] 速度控制 - 左:{input_left} 右:{input_right}")

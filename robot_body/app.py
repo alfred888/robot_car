@@ -156,7 +156,7 @@ cmd_feedback_actions = [f['code']['cv_none'], f['code']['cv_moti'],
 # 处理计算机视觉信息
 def process_cv_info(cmd):
     if cmd[f['fb']['detect_type']] != f['code']['cv_none']:
-        print(cmd[f['fb']['detect_type']])
+        logger.debug(cmd[f['fb']['detect_type']])
         pass
 
 # 生成视频帧
@@ -459,12 +459,12 @@ def video_feed():
 @app.route('/send_command', methods=['POST'])
 def handle_command():
     command = request.form['command']
-    print("Received command:", command)
+    logger.debug(f"收到命令: {command}")
     cvf.info_update("CMD:" + command, (0,255,255), 0.36)
     try:
         cmdline_ctrl(command)
     except Exception as e:
-        print(f"[app.handle_command] error: {e}")
+        logger.error(f"[app.handle_command] error: {e}")
     return jsonify({"status": "success", "message": "Command received"})
 
 # 音频文件管理路由
@@ -488,7 +488,7 @@ def upload_audio():
 @app.route('/playAudio', methods=['POST'])
 def play_audio():
     audio_file = request.form['audio_file']
-    print(thisPath + '/sounds/others/' + audio_file)
+    logger.debug(f"播放音频文件: {thisPath}/sounds/others/{audio_file}")
     audio_ctrl.play_audio_thread(thisPath + '/sounds/others/' + audio_file)
     return jsonify({'success': 'Audio is playing'})
 
@@ -507,7 +507,7 @@ def handle_socket_json(json):
     try:
         base.base_json_ctrl(json)
     except Exception as e:
-        print("Error handling JSON data:", e)
+        logger.error(f"处理JSON数据错误: {e}")
         return
 
 # 更新WebSocket数据
@@ -533,7 +533,7 @@ def update_data_websocket_single():
         }
         socketio.emit('update', socket_data, namespace='/ctrl')
     except Exception as e:
-        print("An [app.update_data_websocket_single] error occurred:", e)
+        logger.error(f"[app.update_data_websocket_single] error: {e}")
 
 # 数据更新循环
 def update_data_loop():
@@ -584,7 +584,7 @@ def handle_socket_cmd(message):
     try:
         json_data = json.loads(message)
     except json.JSONDecodeError:
-        print("Error decoding JSON.[app.handle_socket_cmd]")
+        logger.error("解析JSON错误.[app.handle_socket_cmd]")
         return
     cmd_a = float(json_data.get("A", 0))
     if cmd_a in cmd_actions:
@@ -604,7 +604,7 @@ def cmd_on_boot():
         'base -c {"T":300,"mode":0,"mac":"EF:EF:EF:EF:EF:EF"}',  # 基础不会被esp-now广播命令控制，但仍可接收广播消息
         'send -a -b'    # 添加广播MAC地址到对等点
     ]
-    print('base -c {{"T":4,"cmd":{}}}'.format(f['base_config']['module_type']))
+    logger.debug('base -c {{"T":4,"cmd":{}}}'.format(f['base_config']['module_type']))
     for i in range(0, len(cmd_list)):
         cmdline_ctrl(cmd_list[i])
         cvf.info_update(cmd_list[i], (0,255,255), 0.36)
