@@ -10,7 +10,7 @@ import numpy as np
 import logging
 
 # 日志配置（由主程序统一加载，这里只获取 logger）
-logger = logging.getLogger('hardware')
+logger = logging.getLogger('body')
 
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
