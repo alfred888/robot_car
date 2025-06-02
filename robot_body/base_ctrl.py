@@ -135,6 +135,7 @@ class ReadLine:
 class BaseController:
 
 	def __init__(self, uart_dev_set, buad_set):
+		logger.info(f"初始化BaseController,串口:{uart_dev_set},波特率:{buad_set}")
 		self.ser = serial.Serial(uart_dev_set, buad_set, timeout=1)
 		self.rl = ReadLine(self.ser)
 		self.command_queue = queue.Queue()
@@ -190,7 +191,6 @@ class BaseController:
 			self.rl.clear_buffer()
 			logger.error(f"[base_ctrl.feedback_data] fatal error: {e}")
 
-
 	def on_data_received(self):
 		self.ser.reset_input_buffer()
 		data_read = json.loads(self.rl.readline().decode('utf-8'))
@@ -208,75 +208,75 @@ class BaseController:
 
 
 	def base_json_ctrl(self, input_json):
+		logger.debug(f"基础JSON控制: {input_json}")
 		self.send_command(input_json)
 
-
 	def gimbal_emergency_stop(self):
+		logger.info("云台紧急停止")
 		data = {"T":0}
 		self.send_command(data)
 
-
 	def base_speed_ctrl(self, input_left, input_right):
+		logger.debug(f"速度控制 - 左:{input_left} 右:{input_right}")
 		data = {"T":1,"L":input_left,"R":input_right}
 		self.send_command(data)
 
-
 	def gimbal_ctrl(self, input_x, input_y, input_speed, input_acceleration):
+		logger.debug(f"云台控制 - X:{input_x} Y:{input_y} 速度:{input_speed} 加速度:{input_acceleration}")
 		data = {"T":133,"X":input_x,"Y":input_y,"SPD":input_speed,"ACC":input_acceleration}
 		self.send_command(data)
 
-
 	def gimbal_base_ctrl(self, input_x, input_y, input_speed):
+		logger.debug(f"云台基础控制 - X:{input_x} Y:{input_y} 速度:{input_speed}")
 		data = {"T":141,"X":input_x,"Y":input_y,"SPD":input_speed}
 		self.send_command(data)
 
-
 	def base_oled(self, input_line, input_text):
+		logger.debug(f"OLED显示 - 行:{input_line} 文本:{input_text}")
 		data = {"T":3,"lineNum":input_line,"Text":input_text}
 		self.send_command(data)
 
-
 	def base_default_oled(self):
+		logger.debug("恢复OLED默认显示")
 		data = {"T":-3}
 		self.send_command(data)
 
-
 	def bus_servo_id_set(self, old_id, new_id):
-		# data = {"T":54,"old":old_id,"new":new_id}
+		logger.info(f"设置总线舵机ID - 原ID:{old_id} 新ID:{new_id}")
 		data = {"T":f['cmd_config']['cmd_set_servo_id'],"raw":old_id,"new":new_id}
 		self.send_command(data)
 
-
 	def bus_servo_torque_lock(self, input_id, input_status):
-		# data = {"T":55,"id":input_id,"status":input_status}
+		logger.debug(f"舵机扭矩锁定 - ID:{input_id} 状态:{input_status}")
 		data = {"T":f['cmd_config']['cmd_servo_torque'],"id":input_id,"cmd":input_status}
 		self.send_command(data)
 
-
 	def bus_servo_mid_set(self, input_id):
-		# data = {"T":58,"id":input_id}
+		logger.debug(f"设置舵机中位 - ID:{input_id}")
 		data = {"T":f['cmd_config']['cmd_set_servo_mid'],"id":input_id}
 		self.send_command(data)
 
-
 	def lights_ctrl(self, pwmA, pwmB):
+		logger.debug(f"灯光控制 - A:{pwmA} B:{pwmB}")
 		data = {"T":132,"IO4":pwmA,"IO5":pwmB}
 		self.send_command(data)
 		self.base_light_status = pwmA
 		self.head_light_status = pwmB
-
 
 	def base_lights_ctrl(self):
 		if self.base_light_status != 0:
 			self.base_light_status = 0
 		else:
 			self.base_light_status = 255
+		logger.debug(f"基础灯光控制 - 状态:{self.base_light_status}")
 		self.lights_ctrl(self.base_light_status, self.head_light_status)
 
 	def gimbal_dev_close(self):
+		logger.info("关闭云台设备")
 		self.ser.close()
 
 	def breath_light(self, input_time):
+		logger.info(f"启动呼吸灯 - 持续时间:{input_time}秒")
 		breath_start_time = time.time()
 		while time.time() - breath_start_time < input_time:
 			for i in range(0, 128, 10):
@@ -286,6 +286,7 @@ class BaseController:
 				self.lights_ctrl(128-i, i)
 				time.sleep(0.1)
 		self.lights_ctrl(0, 0)
+		logger.info("呼吸灯结束")
 
 
 if __name__ == '__main__':
