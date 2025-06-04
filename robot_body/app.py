@@ -459,7 +459,7 @@ def video_feed():
 @app.route('/send_command', methods=['POST'])
 def handle_command():
     command = request.form['command']
-    logger.debug(f"收到命令: {command}")
+    logger.info(f"收到命令: {command}")
     cvf.info_update("CMD:" + command, (0,255,255), 0.36)
     try:
         cmdline_ctrl(command)
