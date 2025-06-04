@@ -9,10 +9,10 @@ if [ -n "$SUDO_USER" ] || [ -n "$SUDO_UID" ]; then
 fi
 
 # 定义第一个定时任务及其调度计划 - 启动主应用程序
-cron_job1="@reboot XDG_RUNTIME_DIR=/run/user/$(id -u) ~/robot_car/robot_body/ugv-env/bin/python ~/robot_car/robot_body/app.py >> ~/ugv.log 2>&1"
+cron_job1="@reboot XDG_RUNTIME_DIR=/run/user/$(id -u) ~/robot_car/robot_body/ugv-env/bin/python ~/robot_car/robot_body/app.py >> ${HOME}/logs/body.log 2>&1"
 
 # 定义第二个定时任务 - 启动Jupyter服务
-cron_job2="@reboot /bin/bash ~/robot_car/robot_body/start_jupyter.sh >> ~/jupyter_log.log 2>&1"
+cron_job2="@reboot /bin/bash ~/robot_car/robot_body/start_jupyter.sh >> ${HOME}/logs/jupyter.log 2>&1"
 
 # 检查第一个定时任务是否已存在于用户的crontab中
 if crontab -l | grep -q "$cron_job1"; then

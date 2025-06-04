@@ -188,6 +188,12 @@ def index():
     logger.info("用户访问主页")
     return render_template('index.html')
 
+# 机器人视觉路由
+@app.route('/eyes')
+def eyes():
+    logger.info("用户访问机器人视觉页面")
+    return render_template('index_eyes.html')
+
 # 获取配置路由
 @app.route('/config')
 def get_config():
