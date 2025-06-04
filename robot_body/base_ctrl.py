@@ -255,6 +255,7 @@ class BaseController:
 			input_right: 右轮速度
 		"""
 		logger.info(f"[base_speed_ctrl] 速度控制 - 左:{input_left} 右:{input_right}")
+		logger.debug(f"[base_speed_ctrl] 指令内容: {{'T':1, 'L':{input_left}, 'R':{input_right}}}")
 		data = {"T":1,"L":input_left,"R":input_right}
 		self.send_command(data)
 
@@ -266,7 +267,8 @@ class BaseController:
 			input_speed: 运动速度
 			input_acceleration: 加速度
 		"""
-		logger.debug(f"云台控制 - X:{input_x} Y:{input_y} 速度:{input_speed} 加速度:{input_acceleration}")
+		logger.info(f"[gimbal_ctrl] 云台控制 - X:{input_x} Y:{input_y} 速度:{input_speed} 加速度:{input_acceleration}")
+		logger.debug(f"[gimbal_ctrl] 指令内容: {{'T':133, 'X':{input_x}, 'Y':{input_y}, 'SPD':{input_speed}, 'ACC':{input_acceleration}}}")
 		data = {"T":133,"X":input_x,"Y":input_y,"SPD":input_speed,"ACC":input_acceleration}
 		self.send_command(data)
 
@@ -277,7 +279,8 @@ class BaseController:
 			input_y: Y轴角度
 			input_speed: 运动速度
 		"""
-		logger.debug(f"云台基础控制 - X:{input_x} Y:{input_y} 速度:{input_speed}")
+		logger.info(f"[gimbal_base_ctrl] 云台基础控制 - X:{input_x} Y:{input_y} 速度:{input_speed}")
+		logger.debug(f"[gimbal_base_ctrl] 指令内容: {{'T':141, 'X':{input_x}, 'Y':{input_y}, 'SPD':{input_speed}}}")
 		data = {"T":141,"X":input_x,"Y":input_y,"SPD":input_speed}
 		self.send_command(data)
 
