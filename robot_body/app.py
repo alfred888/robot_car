@@ -5,6 +5,8 @@ import yaml, os
 os.makedirs('logs', exist_ok=True)
 import logging.config
 
+curpath = os.path.realpath(__file__)
+thisPath = os.path.dirname(curpath)
 def setup_logging(config_path):
     """初始化日志配置，处理 ~ 和日志目录创建"""
     try:
