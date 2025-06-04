@@ -15,7 +15,6 @@ handlers:
     level: DEBUG
     formatter: standard
     stream: ext://sys.stdout
-
   file:
     class: logging.handlers.RotatingFileHandler
     level: DEBUG
@@ -29,7 +28,7 @@ handlers:
     class: logging.handlers.RotatingFileHandler
     level: ERROR
     formatter: detailed
-    filename: ~/logs/body_error.log
+    filename: ~/logs/error.log
     maxBytes: 5242880  # 5MB
     backupCount: 2
     encoding: utf8

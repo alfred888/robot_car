@@ -33,6 +33,6 @@ source ugv-env/bin/activate
 nohup python app.py > ${HOME}/logs/body.log 2>&1 &
 
 # 启动 Jupyter（后台运行，日志输出到 jupyter.log）
-nohup ./start_jupyter.sh > jupyter.log 2>&1 &
+nohup ./start_jupyter.sh > ${HOME}/logs/jupyter.log 2>&1 &
 
 echo "机器人服务已重启。"

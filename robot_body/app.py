@@ -5,21 +5,30 @@ import yaml, os
 os.makedirs('logs', exist_ok=True)
 import logging.config
 
-# 配置日志
-curpath = os.path.realpath(__file__)
-thisPath = os.path.dirname(curpath)
+def setup_logging(config_path):
+    """初始化日志配置，处理 ~ 和日志目录创建"""
+    try:
+        config_path = os.path.abspath(config_path)
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
 
-# 确保日志目录存在
-log_dir = os.path.join(thisPath, 'logs')
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+        # 处理日志路径
+        for handler in config.get("handlers", {}).values():
+            if "filename" in handler:
+                handler["filename"] = os.path.abspath(os.path.expanduser(handler["filename"]))
+                # 创建目录
+                os.makedirs(os.path.dirname(handler["filename"]), exist_ok=True)
 
-with open(thisPath + '/config/logging_config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
-    logging.config.dictConfig(config)
+        logging.config.dictConfig(config)
+    except Exception as e:
+        print(f"[ERROR] Failed to load logging configuration: {e}", file=sys.stderr)
+        logging.basicConfig(level=logging.INFO)
+
+# 使用当前目录中的 config/logging_config.yaml
+setup_logging(os.path.join(os.path.dirname(__file__), "config", "logging_config.yaml"))
 
 # 创建日志记录器
-logger = logging.getLogger('body')
+logger = logging.getLogger("body")
 
 # 检查是否为树莓派5
 def is_raspberry_pi5():
