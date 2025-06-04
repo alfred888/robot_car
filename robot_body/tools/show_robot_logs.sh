@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# 进入当前用户主目录下的logs目录
-dir=~/logs
-cd "$dir" || { echo "日志目录不存在: $dir"; exit 1; }
+# 远程主机信息
+ROBOT_USER=ws
+ROBOT_HOST=ws   # 如果 ws 不是主机名，请改为实际主机名或IP
+LOG_DIR=~/logs
 
-echo "正在实时查看 $dir/body.log ..."
-tail -f body.log 
+# 远程执行 tail -f
+ssh ${ROBOT_USER}@${ROBOT_HOST} "cd /home/${ROBOT_USER}/logs && tail -f body.log"

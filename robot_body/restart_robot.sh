@@ -29,8 +29,8 @@ fi
 echo "激活虚拟环境并重启 app.py..."
 source ugv-env/bin/activate
 
-# 启动 app.py（后台运行，日志输出到 app.log）
-nohup python app.py > app.log 2>&1 &
+# 启动 app.py（后台运行，日志输出到 body.log）
+nohup python app.py > ${HOME}/logs/body.log 2>&1 &
 
 # 启动 Jupyter（后台运行，日志输出到 jupyter.log）
 nohup ./start_jupyter.sh > jupyter.log 2>&1 &
