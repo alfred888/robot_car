@@ -224,14 +224,16 @@ class BaseController:
 
 	def send_command(self, data):
 		"""发送命令到命令队列"""
-		logger.debug(f"发送命令: {data}")
+
+
 		self.command_queue.put(data)
 
 	def process_commands(self):
 		"""处理命令队列中的命令"""
 		while True:
 			data = self.command_queue.get()
-			logger.debug(f"处理命令: {data}")
+
+
 			self.ser.write((json.dumps(data) + '\n').encode("utf-8"))
 
 	def base_json_ctrl(self, input_json):
