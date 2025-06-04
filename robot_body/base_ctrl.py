@@ -238,7 +238,8 @@ class BaseController:
 
 	def base_json_ctrl(self, input_json):
 		"""基础JSON控制接口"""
-		logger.debug(f"基础JSON控制: {input_json}")
+
+
 		self.send_command(input_json)
 
 	def gimbal_emergency_stop(self):
@@ -286,7 +287,8 @@ class BaseController:
 			input_line: 显示行号
 			input_text: 显示文本
 		"""
-		logger.debug(f"OLED显示 - 行:{input_line} 文本:{input_text}")
+
+
 		data = {"T":3,"lineNum":input_line,"Text":input_text}
 		self.send_command(data)
 
