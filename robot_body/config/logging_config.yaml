@@ -20,7 +20,7 @@ handlers:
     class: logging.handlers.RotatingFileHandler
     level: DEBUG
     formatter: detailed
-    filename: logs/body.log
+    filename: ~/logs/body.log
     maxBytes: 5242880  # 5MB
     backupCount: 3
     encoding: utf8
@@ -29,7 +29,7 @@ handlers:
     class: logging.handlers.RotatingFileHandler
     level: ERROR
     formatter: detailed
-    filename: logs/body_error.log
+    filename: ~/logs/body_error.log
     maxBytes: 5242880  # 5MB
     backupCount: 2
     encoding: utf8
