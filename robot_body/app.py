@@ -46,7 +46,7 @@ threading.Thread(target=lambda: base.breath_light(15), daemon=True).start()
 logger.info("启动呼吸灯")
 
 # 读取配置文件
-with open(thisPath + '/config.yaml', 'r') as yaml_file:
+with open(thisPath + '/config/config.yaml', 'r') as yaml_file:
     f = yaml.safe_load(yaml_file)
     logger.info(f"加载配置文件: {f['base_config']['robot_name']}")
 
@@ -180,7 +180,7 @@ def index():
 @app.route('/config')
 def get_config():
     logger.debug("获取配置文件")
-    with open(thisPath + '/config.yaml', 'r') as file:
+    with open(thisPath + '/config/config.yaml', 'r') as file:
         yaml_content = file.read()
     return yaml_content
 
@@ -437,7 +437,7 @@ def cmdline_ctrl(args_string):
             f['args_config']['slow_speed'] = 0.2
         f['base_config']['main_type'] = main_type
         f['base_config']['module_type'] = module_type
-        with open(thisPath + '/config.yaml', "w") as yaml_file:
+        with open(thisPath + '/config/config.yaml', "w") as yaml_file:
             yaml.dump(f, yaml_file)
         set_version(main_type, module_type)
 

@@ -14,7 +14,7 @@ usb_connected = False
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
 # 读取配置文件
-with open(os.path.dirname(thisPath) + '/config.yaml', 'r') as yaml_file:
+with open(os.path.dirname(thisPath) + '/config/config.yaml', 'r') as yaml_file:
     config = yaml.safe_load(yaml_file)
 
 # 获取当前目录的绝对路径

@@ -22,7 +22,7 @@ import depthai as dai
 # 加载配置文件
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
-with open(thisPath + '/config.yaml', 'r') as yaml_file:
+with open(thisPath + '/config/config.yaml', 'r') as yaml_file:
     f = yaml.safe_load(yaml_file)
 
 # 创建日志记录器，统一使用body
