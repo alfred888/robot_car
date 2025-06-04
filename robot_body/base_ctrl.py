@@ -333,7 +333,8 @@ class BaseController:
 			pwmA: 基础灯光PWM值
 			pwmB: 头部灯光PWM值
 		"""
-		logger.debug(f"灯光控制 - A:{pwmA} B:{pwmB}")
+
+
 		data = {"T":132,"IO4":pwmA,"IO5":pwmB}
 		self.send_command(data)
 		self.base_light_status = pwmA
