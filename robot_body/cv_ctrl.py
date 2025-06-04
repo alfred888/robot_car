@@ -270,6 +270,7 @@ class OpencvFuncs():
 
         # 拍照
         if self.picture_capture_flag:
+            logger.info("执行图片捕获")
             current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             photo_filename = f'{self.photo_path}photo_{current_time}.jpg'
             try:
@@ -283,6 +284,7 @@ class OpencvFuncs():
         if not self.set_video_record_flag and not self.video_record_status_flag:
             pass
         elif self.set_video_record_flag and not self.video_record_status_flag:
+            logger.info(f"执行视频录制: {self.set_video_record_flag}")
             current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             video_filename = f'{self.video_path}video_{current_time}.mp4'
             self.writer = imageio.get_writer(video_filename, fps=30)
@@ -368,25 +370,25 @@ class OpencvFuncs():
         return osd_frame
 
     def picture_capture(self):
-        """触发拍照"""
+        logger.info("执行图片捕获")
         self.picture_capture_flag = True
 
     def video_record(self, input_cmd):
-        """控制视频录制"""
+        logger.info(f"执行视频录制: {input_cmd}")
         if input_cmd:
             self.set_video_record_flag = True
         else:
             self.set_video_record_flag = False
 
     def scale_ctrl(self, input_rate):
-        """控制帧缩放比例"""
+        logger.info(f"执行缩放控制: {input_rate}")
         if input_rate < 1:
             self.scale_rate = 1
         else:
             self.scale_rate = input_rate
 
     def set_video_quality(self, input_quality):
-        """设置视频质量"""
+        logger.info(f"设置视频质量: {input_quality}")
         if input_quality < 1:
             self.video_quality = 1
         elif input_quality > 100:
@@ -395,13 +397,13 @@ class OpencvFuncs():
             self.video_quality = int(input_quality)
 
     def set_cv_mode(self, input_mode):
-        """设置CV功能模式"""
+        logger.info(f"设置CV模式: {input_mode}")
         self.cv_mode = input_mode
         if self.cv_mode == f['code']['cv_none']:
             self.set_video_record_flag = False
 
     def set_detection_reaction(self, input_reaction):
-        """设置检测反应模式"""
+        logger.info(f"设置检测反应: {input_reaction}")
         self.detection_reaction_mode = input_reaction
         if self.detection_reaction_mode == f['code']['re_none']:
             self.set_video_record_flag = False
@@ -409,7 +411,7 @@ class OpencvFuncs():
 
 
     def cv_detect_movition(self, img):
-        """运动检测功能"""
+        logger.info("执行运动检测")
         timestamp = datetime.datetime.now()
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
@@ -458,7 +460,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def gimbal_track(self, fx, fy, gx, gy, iterate):
-        """云台跟踪控制"""
+        logger.info(f"执行云台跟踪: fx={fx}, fy={fy}, gx={gx}, gy={gy}, iterate={iterate}")
         global gimbal_x, gimbal_y
         distance = math.sqrt((fx - gx) ** 2 + (gy - fy) ** 2)
         self.pan_angle += (gx - fx) * iterate
@@ -481,7 +483,7 @@ class OpencvFuncs():
         return distance
 
     def cv_detect_faces(self, img):
-        """人脸检测功能"""
+        logger.info("执行人脸检测")
         gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = self.faceCascade.detectMultiScale(
                 gray_img,     
@@ -542,7 +544,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def cv_detect_objects(self, img):
-        """目标检测功能"""
+        logger.info("执行目标检测")
         overlay_buffer = np.zeros_like(img)
         cv2.putText(overlay_buffer, 'CV_OBJS', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
@@ -569,6 +571,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def cv_detect_color(self, img):
+        logger.info("执行颜色检测")
         global head_light_pwm
         blurred = cv2.GaussianBlur(img, (11, 11), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -652,9 +655,11 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def calculate_distance(self, lm1, lm2):
+        logger.info(f"计算距离: lm1={lm1}, lm2={lm2}")
         return ((lm1.x - lm2.x) ** 2 + (lm1.y - lm2.y) ** 2) ** 0.5
 
     def calculate_angle(self, A1, A2, B1, B2):
+        logger.info(f"计算角度: A1={A1}, A2={A2}, B1={B1}, B2={B2}")
         vector_A = (A2.x - A1.x, A2.y - A1.y)
         vector_B = (B2.x - B1.x, B2.y - B1.y)
 
@@ -670,11 +675,13 @@ class OpencvFuncs():
         return angle_deg
 
     def map_value(self, value, original_min, original_max, new_min, new_max):
+        logger.info(f"映射值: value={value}, original_min={original_min}, original_max={original_max}, new_min={new_min}, new_max={new_max}")
         if original_max == 0:
             return 0
         return (value - original_min) / (original_max - original_min) * (new_max - new_min) + new_min
 
     def mp_detect_hand(self, img):
+        logger.info("执行MediaPipe手势检测")
         height, width = img.shape[:2]
         center_x, center_y = width // 2, height // 2
 
@@ -765,6 +772,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def cv_auto_drive(self, img):
+        logger.info("执行自动驾驶")
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
         # get a sampling
@@ -877,6 +885,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def mediaPipe_faces(self, img):
+        logger.info("执行MediaPipe人脸检测")
         image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = self.face_detection.process(image)
 
@@ -888,6 +897,7 @@ class OpencvFuncs():
         self.overlay = overlay_buffer
 
     def mediaPipe_pose(self, img):
+        logger.info("执行MediaPipe姿态检测")
         image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = self.pose.process(image)
 
@@ -900,6 +910,7 @@ class OpencvFuncs():
 
 
     def info_update(self, megs, color, size):
+        logger.info(f"更新信息: megs={megs}, color={color}, size={size}")
         if megs == -1:
             self.info_update_time = time.time()
             self.show_info_flag = True
@@ -911,9 +922,11 @@ class OpencvFuncs():
         self.show_info_flag = True
 
     def commandline_ctrl(self, args_str):
+        logger.info(f"执行命令行控制: {args_str}")
         return
 
     def show_recv_info(self, input_cmd):
+        logger.info(f"显示接收信息: {input_cmd}")
         if input_cmd == True:
             self.show_base_info_flag = True
         else:
@@ -921,6 +934,7 @@ class OpencvFuncs():
         print(self.show_base_info_flag)
 
     def format_json_numbers(self, obj):
+        logger.info("格式化JSON数字")
         if isinstance(obj, dict):
             return {k: self.format_json_numbers(v) for k, v in obj.items()}
         elif isinstance(obj, list):
@@ -930,6 +944,7 @@ class OpencvFuncs():
         return obj
 
     def update_base_data(self, input_data):
+        logger.info(f"更新基础数据: {input_data}")
         if not input_data:
             return
         try:
@@ -949,6 +964,7 @@ class OpencvFuncs():
 
 
     def cv_process(self, frame):
+        logger.info("执行CV处理")
         cv_mode_list = {
             f['code']['cv_moti']: self.cv_detect_movition,
             f['code']['cv_face']: self.cv_detect_faces,
@@ -966,10 +982,12 @@ class OpencvFuncs():
         self.cv_event.clear()
 
     def opencv_threading(self, input_img):
+        logger.info("执行OpenCV线程")
         cv_thread = threading.Thread(target=self.cv_process, args=(input_img,), daemon=True)
         cv_thread.start()
 
     def head_light_ctrl(self, input_mode):
+        logger.info(f"控制头灯: {input_mode}")
         self.cv_light_mode = input_mode
         if input_mode == 0:
             self.base_ctrl.lights_ctrl(self.base_ctrl.base_light_status, 0)
@@ -988,6 +1006,7 @@ class OpencvFuncs():
                 self.base_ctrl.lights_ctrl(self.base_ctrl.base_light_status, 0)
 
     def set_movtion_lock(self, input_cmd):
+        logger.info(f"设置运动锁定: {input_cmd}")
         if not input_cmd:
             self.cv_movtion_lock = False
             self.pan_angle = 0
@@ -999,19 +1018,23 @@ class OpencvFuncs():
 
 
     def change_target_color(self, lc, uc):
+        logger.info(f"更改目标颜色: lc={lc}, uc={uc}")
         self.color_lower = np.array([lc[0], lc[1], lc[2]])
         self.color_upper = np.array([uc[0], uc[1], uc[2]])
 
     def selet_target_color(self, color_name):
+        logger.info(f"选择目标颜色: {color_name}")
         if color_name in self.color_list:
             self.color_lower = self.color_list[color_name][0]
             self.color_upper = self.color_list[color_name][1]
 
     def change_line_color(self, lc, uc):
+        logger.info(f"更改线条颜色: lc={lc}, uc={uc}")
         self.line_lower = np.array([lc[0], lc[1], lc[2]])
         self.line_upper = np.array([uc[0], uc[1], uc[2]])
 
     def set_line_track_args(self, sam_pos_1, sam_pos_2, slope_im, base_im, spd_im, lt_spd, slope_spd):
+        logger.info(f"设置线条跟踪参数: sam_pos_1={sam_pos_1}, sam_pos_2={sam_pos_2}, slope_im={slope_im}, base_im={base_im}, spd_im={spd_im}, lt_spd={lt_spd}, slope_spd={slope_spd}")
         self.sampling_line_1 = sam_pos_1
         if sam_pos_2 < sam_pos_1:
             sam_pos_2 = sam_pos_1 + 0.1
@@ -1023,6 +1046,7 @@ class OpencvFuncs():
         self.slope_on_speed = slope_spd
 
     def set_pt_track_args(self, args_1, args_2):
+        logger.info(f"设置PT跟踪参数: args_1={args_1}, args_2={args_2}")
         if args_1 == '-c' or args_1 == '--color_iterate':
             self.track_color_iterate = float(args_2)
         elif args_1 == '-f' or args_1 == '--faces_iterate':
@@ -1033,6 +1057,7 @@ class OpencvFuncs():
             self.track_acc_rate = float(args_2)
 
     def timelapse(self, input_speed, input_time, input_interval, input_loop_times):
+        logger.info(f"执行延时摄影: input_speed={input_speed}, input_time={input_time}, input_interval={input_interval}, input_loop_times={input_loop_times}")
         self.mission_flag = True
         for i in range(0, input_loop_times):
             if not self.mission_flag:
@@ -1052,4 +1077,5 @@ class OpencvFuncs():
                 break
 
     def mission_stop(self):
+        logger.info("停止任务")
         self.mission_flag = False
