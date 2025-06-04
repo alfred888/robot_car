@@ -944,7 +944,8 @@ class OpencvFuncs():
         return obj
 
     def update_base_data(self, input_data):
-        logger.info(f"更新基础数据: {input_data}")
+
+
         if not input_data:
             return
         try:
