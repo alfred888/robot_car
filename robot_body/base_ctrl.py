@@ -205,11 +205,11 @@ class BaseController:
 			try:
 				text = raw.decode('utf-8')
 				self.data_buffer = json.loads(text)
-			self.base_data = self.data_buffer
-			return self.base_data
+				self.base_data = self.data_buffer
+				return self.base_data
 			except Exception as e:
 				logger.warning(f"[feedback_data final] error: {e} | raw: {raw[:10].hex()}")
-				return None
+				return None, None
 
 		except Exception as e:
 			self.rl.clear_buffer()
