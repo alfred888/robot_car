@@ -22,7 +22,7 @@ import depthai as dai
 # 加载配置文件
 curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
-with open(thisPath + '/config/config.yaml', 'r') as yaml_file:
+with open(thisPath + '/../config/config.yaml', 'r') as yaml_file:
     f = yaml.safe_load(yaml_file)
 
 # 创建日志记录器，统一使用body
@@ -75,7 +75,7 @@ class OpencvFuncs():
         self.avg = None
 
         # 人脸检测和跟踪参数
-        self.faceCascade = cv2.CascadeClassifier(thisPath + '/models/haarcascade_frontalface_default.xml')
+        self.faceCascade = cv2.CascadeClassifier(thisPath + '/../models/haarcascade_frontalface_default.xml')
         self.min_radius = f['cv']['min_radius']
         self.track_faces_iterate = f['cv']['track_faces_iterate']
 
@@ -95,7 +95,7 @@ class OpencvFuncs():
         self.track_color_iterate = f['cv']['track_color_iterate']
 
         # DNN目标检测参数
-        self.net = cv2.dnn.readNetFromCaffe(thisPath + '/models/deploy.prototxt', thisPath + '/models/mobilenet_iter_73000.caffemodel')
+        self.net = cv2.dnn.readNetFromCaffe(thisPath + '/../models/deploy.prototxt', thisPath + '/../models/mobilenet_iter_73000.caffemodel')
         self.class_names = ["background", "aeroplane", "bicycle", "bird", "boat",
                             "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
                             "dog", "horse", "motorbike", "person", "pottedplant", "sheep",

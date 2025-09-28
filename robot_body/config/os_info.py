@@ -140,3 +140,5 @@ if __name__ == "__main__":
         print([si.pictures_size, si.videos_size, si.cpu_load, si.cpu_temp,
             si.ram, si.wifi_rssi, si.wifi_mode])
         time.sleep(1)
+
+

@@ -1,7 +1,7 @@
 # 导入基础控制器库
-from base_ctrl import BaseController
+from base_action.base_ctrl import BaseController
 import threading
-import yaml, os
+import yaml, os, sys
 os.makedirs('logs', exist_ok=True)
 import logging.config
 
@@ -78,9 +78,9 @@ import json
 import uuid
 import asyncio
 import time
-import cv_ctrl
+import base_action.cv_ctrl as cv_ctrl
 import robot_mouth.audio_ctrl as audio_ctrl
-import os_info
+from config import os_info
 
 # 获取系统信息
 UPLOAD_FOLDER = thisPath + '/sounds/others'

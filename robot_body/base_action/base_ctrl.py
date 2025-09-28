@@ -17,7 +17,7 @@ curpath = os.path.realpath(__file__)
 thisPath = os.path.dirname(curpath)
 
 # 加载配置文件
-with open(thisPath + '/config/config.yaml', 'r') as yaml_file:
+with open(thisPath + '/../config/config.yaml', 'r') as yaml_file:
     f = yaml.safe_load(yaml_file)
 
 class ReadLine:
@@ -231,10 +231,16 @@ class BaseController:
 	def process_commands(self):
 		"""处理命令队列中的命令"""
 		while True:
-			data = self.command_queue.get()
-
-
-			self.ser.write((json.dumps(data) + '\n').encode("utf-8"))
+			try:
+				data = self.command_queue.get()
+				if data is None:  # 退出信号
+					break
+				logger.debug(f"[process_commands] 发送命令: {data}")
+				self.ser.write((json.dumps(data) + '\n').encode("utf-8"))
+				self.command_queue.task_done()
+			except Exception as e:
+				logger.error(f"[process_commands] 命令处理失败: {e}")
+				self.command_queue.task_done()
 
 	def base_json_ctrl(self, input_json):
 		"""基础JSON控制接口"""
@@ -246,7 +252,7 @@ class BaseController:
 		"""云台紧急停止"""
 		logger.info("云台紧急停止")
 		data = {"T":0}
-		logger.debug(f"速度控制 - 左:{input_left} 右:{input_right}")
+		self.send_command(data)
 
 	def base_speed_ctrl(self, input_left, input_right):
 		"""控制底盘左右轮速度
@@ -376,23 +382,53 @@ class BaseController:
 
 
 if __name__ == '__main__':
-	# RPi5
-	base = BaseController('/dev/ttyAMA0', 115200)
+	# 设置日志格式
+	logging.basicConfig(
+		level=logging.INFO,
+		format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+	)
+	
+	logger.info("=== 开始测试小车移动功能 ===")
+	
+	try:
+		# RPi5
+		base = BaseController('/dev/ttyAMA0', 115200)
+		logger.info("BaseController初始化成功")
 
-	# RPi4B
-	# base = BaseController('/dev/serial0', 115200)
+		# 获取配置中的速度参数
+		max_speed = f['args_config']['max_speed']
+		slow_speed = f['args_config']['slow_speed']
+		logger.info(f"速度配置 - max_speed: {max_speed}, slow_speed: {slow_speed}")
 
-	# breath light for 15s
-	base.breath_light(15)
+		# 测试移动功能，使用与页面相同的方式
+		logger.info("=== 测试移动功能：前进 ===")
+		# 使用页面相同的方式：T=1, L=max_speed, R=max_speed
+		base.base_json_ctrl({"T": 1, "L": max_speed, "R": max_speed})
+		time.sleep(2)
+		base.base_json_ctrl({"T": 1, "L": 0, "R": 0})
+		time.sleep(1)
 
-	# gimble ctrl, look forward
-	#                x  y  spd acc
-	base.gimbal_ctrl(0, 0, 10, 0)
-    
-    # x(-180 ~ 180)
-	# x- look left
-	# x+ look right
+		logger.info("=== 测试移动功能：后退 ===")
+		base.base_json_ctrl({"T": 1, "L": -max_speed, "R": -max_speed})
+		time.sleep(2)
+		base.base_json_ctrl({"T": 1, "L": 0, "R": 0})
+		time.sleep(1)
 
-	# y(-30 ~ 90)
-	# y- look down
-	# y+ look up
+		logger.info("=== 测试移动功能：左转 ===")
+		base.base_json_ctrl({"T": 1, "L": -max_speed, "R": max_speed})
+		time.sleep(2)
+		base.base_json_ctrl({"T": 1, "L": 0, "R": 0})
+		time.sleep(1)
+
+		logger.info("=== 测试移动功能：右转 ===")
+		base.base_json_ctrl({"T": 1, "L": max_speed, "R": -max_speed})
+		time.sleep(2)
+		base.base_json_ctrl({"T": 1, "L": 0, "R": 0})
+		time.sleep(1)
+
+		logger.info("=== 移动测试完成 ===")
+		
+	except Exception as e:
+		logger.error(f"测试失败: {e}")
+		import traceback
+		logger.error(f"详细错误: {traceback.format_exc()}")
